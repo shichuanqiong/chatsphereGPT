@@ -1,0 +1,76 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": "auth != null",
+    "profiles": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "roles": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
+      }
+    },
+    "rooms": {
+      "$roomId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "roomMembers": {
+      "$roomId": {
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "messages": {
+      "$roomId": {
+        "$msgId": {
+          ".read": true,
+          ".write": "auth != null"
+        }
+      }
+    },
+    "dmMessages": {
+      "$tid": {
+        "$msgId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    },
+    "inbox": {
+      "$uid": {
+        "$notifId": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "friends": {
+      "$uid": {
+        "$friendUid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "posts": {
+      "$postId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    }
+  }
+}

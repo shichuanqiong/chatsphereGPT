@@ -1,0 +1,3 @@
+import { useState } from 'react';
+const EMOJIS='😀😁😂🤣😊😍😘😎🙂😉😌😜🤪🤔🤗🤩😴😭😡👍👎🙏👏🔥✨💯🎉🙌😅🥳🤝❣️❤️‍🔥'.split('');
+export default function EmojiHover({ onPick }:{ onPick:(e:string)=>void }){const [show,setShow]=useState(false);return(<div className='relative' onMouseEnter={()=>setShow(true)} onMouseLeave={()=>setShow(false)}><button className='px-2 py-2 rounded-lg bg-white/10'>😊</button>{show&&(<div className='absolute z-20 mt-1 p-2 bg-white rounded-xl shadow max-w-[320px] grid grid-cols-8 gap-1'>{EMOJIS.map(e=>(<button key={e} className='text-xl hover:scale-110 transition' onClick={()=>onPick(e)}>{e}</button>))}</div>)}</div>)}
