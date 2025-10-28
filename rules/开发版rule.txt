@@ -1,0 +1,26 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "dmThreads": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "dmMessages": {
+      "$threadId": {
+        "$msgId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}
+
+
+开发版（本地联调/临时测试）
+
+特点：仍要求登录，但放宽写权限，便于快速调试；不要在线上使用。

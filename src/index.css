@@ -1,1 +1,89 @@
-@tailwind base;@tailwind components;@tailwind utilities;html,body,#root{height:100%}.glass{@apply rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl}.badge{@apply inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-white/10 border border-white/20}.link{@apply hover:underline hover:opacity-90 cursor-pointer}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+.glass {
+  @apply rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl;
+}
+
+.badge {
+  @apply inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-white/10 border border-white/20;
+}
+
+.link {
+  @apply hover:underline hover:opacity-90 cursor-pointer;
+}
+
+/* Custom Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.4s ease-out;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* DM Header Styles */
+.dm-header {
+  backdrop-filter: blur(8px);
+  background: rgba(20, 20, 20, 0.35);
+  border-radius: 14px;
+}
+
+/* Disabled Button Styles */
+.btn-send[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
