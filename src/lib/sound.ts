@@ -2,16 +2,13 @@
 type Source = { src: string; type: string };
 
 export const SOURCES: Record<string, Source[]> = {
-  // 主要提示音：使用实际存在的文件
   ding: [
+    // 用实际存在的文件名（相对路径，不要以 / 开头）
     { src: 'sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
     { src: 'sfx/pop_soft.wav', type: 'audio/wav' },
+    // 最后兜底的 CDN（带 @main 更稳）
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
-  
-  // 可选：其他音效
-  birds: [{ src: 'sfx/forest_birds_mix.wav', type: 'audio/wav' }],
-  pop: [{ src: 'sfx/pop_soft.wav', type: 'audio/wav' }],
 } as const;
 
 class SoundManager {
@@ -24,18 +21,17 @@ class SoundManager {
     this.muted = this.readMuted();
     console.log('[Sound] Initialized. Muted:', this.muted);
 
-    // 页面任意交互后解锁
+    // 首个用户交互后预热音频
     const unlock = () => {
       if (this.unlocked) return;
       try {
         this.unlocked = true;
-        console.log('[Sound] Audio unlocked by user interaction');
-        // 预热音频
+        console.log('[Sound] Unlocked by user interaction');
         this.play('ding').catch(() => {});
         window.removeEventListener('pointerdown', unlock);
         window.removeEventListener('keydown', unlock);
       } catch (err) {
-        console.error('[Sound] Error unlocking audio:', err);
+        console.error('[Sound] Error unlocking:', err);
       }
     };
     window.addEventListener('pointerdown', unlock, { once: true });
@@ -73,12 +69,12 @@ class SoundManager {
   }
 
   /**
-   * 播放提示音（自动回退多源，出错继续尝试下一源）
+   * 播放提示音（自动回退多源）
    */
   async play(name: keyof typeof SOURCES) {
     const now = Date.now();
     if (now - this.lastPlay < this.throttleMs) {
-      console.log('[Sound] Throttled - too soon to play again');
+      console.log('[Sound] Throttled');
       return;
     }
     this.lastPlay = now;
@@ -89,38 +85,41 @@ class SoundManager {
     }
     
     if (!this.unlocked) {
-      console.warn('[Sound] Audio not unlocked yet - need user interaction first');
+      console.warn('[Sound] Not unlocked yet');
     }
 
-    console.log('[Sound] Playing:', name, '- Unlocked:', this.unlocked);
+    console.log('[Sound] Playing:', name);
 
     const list = SOURCES[name];
     if (!list) {
-      console.error('[Sound] No sources found for:', name);
+      console.error('[Sound] No sources for:', name);
       return;
     }
 
-    // 逐个源尝试
-    for (let i = 0; i < list.length; i++) {
-      const s = list[i];
+    // 逐个源尝试，打印完整 URL
+    for (const s of list) {
       try {
-        console.log(`[Sound] Trying source ${i + 1}/${list.length}:`, s.src);
+        // 构建完整 URL，处理 GitHub Pages 子路径
+        const base = (import.meta as any).env?.BASE_URL || '/';
+        const url = s.src.startsWith('http')
+          ? s.src
+          : new URL(s.src, base).toString();
         
-        const audio = new Audio();
-        audio.src = s.src;
+        console.log('[Sound] Trying:', url);
+        
+        const audio = new Audio(url);
         audio.type = s.type;
         audio.crossOrigin = 'anonymous';
         
-        console.log('[Sound] Playing:', s.src);
         await audio.play();
-        console.log('[Sound] ✅ Successfully played:', s.src);
+        console.log('[Sound] ✅ Played:', url);
         return;
       } catch (err) {
-        console.warn(`[Sound] Failed to play source ${i + 1}:`, err);
+        console.warn('[Sound] Failed:', s.src, err);
       }
     }
     
-    console.error('[Sound] ❌ All audio sources failed');
+    console.error('[Sound] ❌ All sources failed');
   }
 }
 
