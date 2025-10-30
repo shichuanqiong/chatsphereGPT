@@ -2,12 +2,10 @@
 type Source = { src: string; type?: string };
 
 const SOURCES: Record<string, Source[]> = {
-  // "叮"提示音，多源回退：优先 CDN（确保有源）→ 本地文件
+  // "叮"提示音，多源回退：优先本地文件 → CDN备用
   ding: [
+    { src: '/sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static/sfx/notification.mp3', type: 'audio/mpeg' },
-    { src: '/sfx/ding.mp3', type: 'audio/mpeg' },
-    { src: '/sfx/ding.ogg', type: 'audio/ogg' },
-    { src: '/sfx/ding.wav', type: 'audio/wav' },
   ],
 };
 
