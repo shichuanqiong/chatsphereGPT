@@ -1060,7 +1060,10 @@ export default function Home() {
                       // Close sidebar on mobile after selecting user
                       document.documentElement.removeAttribute('data-sidebar');
                       // Close Online Users menu after selecting user
-                      window.dispatchEvent(new CustomEvent('cs:set', { detail: { id: 'online', open: false } }));
+                      // Use setTimeout to ensure event is dispatched after openDM
+                      setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('cs:set', { detail: { id: 'online', open: false } }));
+                      }, 0);
                     }}
                     onOpenProfile={handleOpenProfile}
                   />
@@ -1118,7 +1121,10 @@ export default function Home() {
                     // Close sidebar on mobile after selecting user
                     document.documentElement.removeAttribute('data-sidebar');
                     // Close Online Users menu after selecting user
-                    window.dispatchEvent(new CustomEvent('cs:set', { detail: { id: 'online', open: false } }));
+                    // Use setTimeout to ensure event is dispatched after openDM
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('cs:set', { detail: { id: 'online', open: false } }));
+                    }, 0);
                   }}
                   onOpenProfile={handleOpenProfile}
                 />

@@ -14,6 +14,7 @@ export default function CollapseSection({
     if (stored === '1' || stored === '0') return stored === '1';
     return defaultState;
   });
+  
   useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(prefKey, open ? '1' : '0');
@@ -28,8 +29,11 @@ export default function CollapseSection({
         setOpen(d.open);
       }
     };
-    window.addEventListener('cs:set', onSet as any);
-    return () => window.removeEventListener('cs:set', onSet as any);
+    
+    window.addEventListener('cs:set', onSet as any, false);
+    return () => {
+      window.removeEventListener('cs:set', onSet as any, false);
+    };
   }, [id]);
 
   return (
