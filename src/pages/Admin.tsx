@@ -117,13 +117,16 @@ export default function AdminDashboard() {
   const initSettings = () => {
     try {
       const saved = localStorage.getItem('system-settings');
+      console.log('[Admin] Loading settings from localStorage:', saved);
       if (saved) {
         const config = JSON.parse(saved);
+        console.log('[Admin] Parsed settings:', config);
         return config;
       }
     } catch (error) {
       console.error('Failed to load system settings from localStorage:', error);
     }
+    console.log('[Admin] No saved settings found, using defaults');
     return null;
   };
 

@@ -77,11 +77,13 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
       const settings = localStorage.getItem('system-settings');
       if (settings) {
         const parsed = JSON.parse(settings);
+        console.log('[Composer] Loaded slow mode from localStorage:', parsed.slowMode);
         return parsed.slowMode || 0;
       }
     } catch (error) {
       console.error('Failed to get slow mode:', error);
     }
+    console.log('[Composer] No slow mode setting found, using default: 0');
     return 0;
   };
 
@@ -93,9 +95,11 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
     // 只在 Room 中应用速率限制，DM 不受影响
     if (target.roomId) {
       const slowModeSeconds = getSlowMode();
+      console.log('[Composer] sendRecord: slowModeSeconds =', slowModeSeconds, 'roomId =', target.roomId);
       
       // 1) 检查本地速率限制（包括基础 slow mode 和 spam mode）
       const rateLimitCheck = checkRateLimit(uid, target.roomId, slowModeSeconds);
+      console.log('[Composer] Rate limit check result:', rateLimitCheck);
       if (!rateLimitCheck.canSend) {
         show(rateLimitCheck.reason || 'Cannot send message', 'warning');
         return;
