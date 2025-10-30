@@ -14,15 +14,15 @@ import {
   serverTimestamp,
 } from 'firebase/database';
 
-// 从 .env 读取
+// Firebase 配置（从 Firebase 控制台复制）
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: 'AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENviIGc',
+  authDomain: 'chatspheregpt.firebaseapp.com',
+  databaseURL: 'https://chatspheregpt-default-rtdb.firebaseio.com',
+  projectId: 'chatspheregpt',
+  storageBucket: 'chatspheregpt.firebasestorage.app',
+  messagingSenderId: '421775686973',
+  appId: '1:421775686973:web:c10b0c50f1af2759569954',
 };
 
 const app = initializeApp(firebaseConfig);
