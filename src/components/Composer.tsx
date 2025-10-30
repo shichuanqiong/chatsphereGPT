@@ -7,7 +7,9 @@ import { canSendTo } from '../lib/social';
 import { 
   checkRateLimit, 
   recordMessage, 
-  getSlowModeFromSettings 
+  getSlowModeFromSettings,
+  checkRateLimitCrossTabs,
+  recordMessageCrossTabs
 } from '../utils/rateLimiter';
 
 type Target = { roomId?: string; dmId?: string };
@@ -92,14 +94,21 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
     if (target.roomId) {
       const slowModeSeconds = getSlowMode();
       
-      // 检查速率限制（包括基础 slow mode 和 spam mode）
+      // 1) 检查本地速率限制（包括基础 slow mode 和 spam mode）
       const rateLimitCheck = checkRateLimit(uid, target.roomId, slowModeSeconds);
       if (!rateLimitCheck.canSend) {
         show(rateLimitCheck.reason || 'Cannot send message', 'warning');
         return;
       }
       
-      // 检查 spam 行为（3 秒内发 3 条自动进入 30 秒防护）
+      // 2) 检查跨标签页/设备的速率限制（可选，从 RTDB 读取）
+      const crossTabCheck = await checkRateLimitCrossTabs(uid, target.roomId, slowModeSeconds);
+      if (!crossTabCheck.canSend) {
+        show(crossTabCheck.reason || 'Rate limited', 'warning');
+        return;
+      }
+      
+      // 3) 检查 spam 行为（3 秒内发 3 条自动进入 30 秒防护）
       const spamCheck = recordMessage(uid, target.roomId);
       if (spamCheck.triggered) {
         show(spamCheck.reason || 'Too many messages', 'error');
@@ -118,6 +127,8 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
 
     if (target.roomId) {
       await push(dbRef(db, `/messages/${target.roomId}`), payload);
+      // 记录到 RTDB，确保跨标签页一致性
+      await recordMessageCrossTabs(uid, target.roomId);
     } else if (target.dmId) {
       // 检查是否被屏蔽
       const [a, b] = target.dmId.split('__');

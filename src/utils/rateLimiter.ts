@@ -1,7 +1,12 @@
 /**
  * Rate Limiter for ChatSphere
- * Manages slow mode and spam detection per user per room
+ * - Manages slow mode and spam detection per user per room
+ * - Local state for immediate feedback
+ * - Optional RTDB sync for cross-tab/device consistency
  */
+
+import { ref as rtdbRef, get as rtdbGet, set as rtdbSet, serverTimestamp, getDatabase } from 'firebase/database';
+import { db } from '../firebase';
 
 type UserRoomKey = string; // Format: "uid:roomId"
 
@@ -14,6 +19,11 @@ interface RateLimitState {
 
 // 存储每个用户在每个房间的速率限制状态
 const rateLimitStates = new Map<UserRoomKey, RateLimitState>();
+
+// 常量配置
+const SPAM_WINDOW_MS = 3000;        // 3 秒滑窗
+const SPAM_BURST_COUNT = 3;         // 3 条消息触发
+const BURST_SLOW_MS = 30000;        // 30 秒临时防护
 
 /**
  * 生成用户房间的唯一 key
@@ -38,7 +48,71 @@ const getOrCreateState = (key: UserRoomKey): RateLimitState => {
 };
 
 /**
- * 检查是否可以发送消息
+ * 从 RTDB 检查跨标签页/设备的速率限制（可选）
+ * 用于防止用户在多个标签页绕过限制
+ */
+export const checkRateLimitCrossTabs = async (
+  uid: string,
+  roomId: string,
+  slowModeSeconds: number
+): Promise<{ canSend: boolean; reason?: string; remainingSeconds?: number }> => {
+  try {
+    if (!uid || !roomId || slowModeSeconds <= 0) {
+      return { canSend: true };
+    }
+
+    const database = getDatabase();
+    const rtdbPath = rtdbRef(database, `rateLimits/${roomId}/${uid}`);
+    const snap = await rtdbGet(rtdbPath);
+
+    const data = snap.val();
+    if (!data || !data.lastSent) {
+      return { canSend: true };
+    }
+
+    const now = Date.now();
+    const lastSent = data.lastSent; // Firebase serverTimestamp 返回毫秒
+    const elapsedMs = now - lastSent;
+    const cooldownMs = slowModeSeconds * 1000;
+
+    if (elapsedMs < cooldownMs) {
+      const remainingSeconds = Math.ceil((cooldownMs - elapsedMs) / 1000);
+      return {
+        canSend: false,
+        reason: `⏱️ Rate limited (global): wait ${remainingSeconds}s.`,
+        remainingSeconds,
+      };
+    }
+
+    return { canSend: true };
+  } catch (err) {
+    console.error('[rateLimiter] Error checking cross-tab limit:', err);
+    // 如果 RTDB 失败，允许发送（优先用户体验）
+    return { canSend: true };
+  }
+};
+
+/**
+ * 记录消息到 RTDB，确保跨标签页一致性
+ */
+export const recordMessageCrossTabs = async (
+  uid: string,
+  roomId: string
+): Promise<void> => {
+  try {
+    if (!uid || !roomId) return;
+
+    const database = getDatabase();
+    const rtdbPath = rtdbRef(database, `rateLimits/${roomId}/${uid}`);
+    await rtdbSet(rtdbPath, { lastSent: serverTimestamp() });
+  } catch (err) {
+    console.error('[rateLimiter] Error recording message to RTDB:', err);
+    // 不阻断发送，继续
+  }
+};
+
+/**
+ * 检查是否可以发送消息（本地状态）
  * @returns { canSend: boolean, reason?: string, remainingSeconds?: number }
  */
 export const checkRateLimit = (
@@ -55,7 +129,7 @@ export const checkRateLimit = (
     const remainingSeconds = Math.ceil((state.spamModeEndTime - now) / 1000);
     return {
       canSend: false,
-      reason: `🚫 You're in anti-spam mode. Please wait ${remainingSeconds}s.`,
+      reason: `🚫 Anti-spam active. Wait ${remainingSeconds}s.`,
       remainingSeconds,
     };
   }
@@ -75,7 +149,7 @@ export const checkRateLimit = (
       const remainingSeconds = Math.ceil((cooldownMs - timeSinceLastMessage) / 1000);
       return {
         canSend: false,
-        reason: `⏱️ Slow mode: Wait ${remainingSeconds}s before sending.`,
+        reason: `⏱️ Slow mode: wait ${remainingSeconds}s.`,
         remainingSeconds,
       };
     }
@@ -100,27 +174,29 @@ export const recordMessage = (
   // 检测快速连续发言（3 秒内发 3 条）
   const timeSinceLastMessage = now - state.lastMessageTime;
 
-  if (timeSinceLastMessage < 3000) {
+  if (timeSinceLastMessage < SPAM_WINDOW_MS) {
     state.messageCount++;
-    console.log(`[Spam Detection] User ${uid} in room ${roomId}: ${state.messageCount} messages in 3s`);
+    console.log(
+      `[Spam Detection] User ${uid} in room ${roomId}: ${state.messageCount}/${SPAM_BURST_COUNT} messages in ${SPAM_WINDOW_MS}ms`
+    );
 
     // 达到 spam 阈值
-    if (state.messageCount >= 3) {
+    if (state.messageCount >= SPAM_BURST_COUNT) {
       state.isInSpamMode = true;
-      state.spamModeEndTime = now + 30000; // 30 秒
+      state.spamModeEndTime = now + BURST_SLOW_MS;
       state.messageCount = 0;
 
       console.warn(
-        `[Spam Mode Activated] User ${uid} in room ${roomId} for 30s due to rapid messages`
+        `[Spam Mode] User ${uid} in room ${roomId} triggered ${BURST_SLOW_MS / 1000}s protection`
       );
 
       return {
         triggered: true,
-        reason: '🚫 You are sending too fast! Anti-spam mode activated for 30s.',
+        reason: `🚫 Sending too fast! Auto-protection for ${BURST_SLOW_MS / 1000}s.`,
       };
     }
   } else {
-    // 超过 3 秒，重置计数
+    // 超过窗口，重置计数
     state.messageCount = 1;
   }
 
