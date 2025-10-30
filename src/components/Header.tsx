@@ -99,12 +99,7 @@ export default function Header({
             </div>
           </div>
 
-          {/* 中：广告位 */}
-          <div id="adTopSlot" className="px-2">
-            <div id="adTop" className="h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 text-sm">
-              Ad — Top Banner
-            </div>
-          </div>
+          {/* 中：空白（由于移除广告位） */}
 
           {/* 右：Inbox / 铃铛 / 用户名 / 头像 / Logout */}
           <div id="rightControls" className="flex items-center gap-2">

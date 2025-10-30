@@ -87,3 +87,22 @@ button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Top Banner Ad Styles */
+.top-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 48px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .top-banner {
+    height: 40px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+}

@@ -10,6 +10,7 @@ import { auth, db, presenceOnline, startPresenceHeartbeat } from '../firebase';
 import Composer, { type ComposerRef } from '../components/Composer';
 import BackgroundRotator from '../components/BackgroundRotator';
 import Header from '../components/Header';
+import TopAdPlaceholder from '../components/TopAdPlaceholder';
 import { useSoundToggle } from '../hooks/useSoundToggle';
 import { Sound } from '../lib/sound';
 import CollapseSection from '../components/CollapseSection';
@@ -1025,6 +1026,13 @@ export default function Home() {
           />
         }
       />
+
+      {/* Header 下方的广告位：顶部横幅 */}
+      <div className="w-full flex justify-center px-3 md:px-6 py-2">
+        <div className="w-full max-w-[728px]">
+          <TopAdPlaceholder sticky={false} />
+        </div>
+      </div>
 
       {/* 移动端广告锚点：仅作为挂载点，不含任何内容 */}
       <div id="adTopMobileAnchor"></div>
