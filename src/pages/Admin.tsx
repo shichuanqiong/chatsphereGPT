@@ -114,9 +114,23 @@ export default function AdminDashboard() {
   const [newRoomType, setNewRoomType] = useState<"Official" | "User">("User");
   
   // System Settings 状态
-  const [slowMode, setSlowMode] = useState(0);
-  const [maxMessageLength, setMaxMessageLength] = useState(5000);
-  const [enableReports, setEnableReports] = useState(true);
+  const initSettings = () => {
+    try {
+      const saved = localStorage.getItem('system-settings');
+      if (saved) {
+        const config = JSON.parse(saved);
+        return config;
+      }
+    } catch (error) {
+      console.error('Failed to load system settings from localStorage:', error);
+    }
+    return null;
+  };
+
+  const savedSettings = initSettings();
+  const [slowMode, setSlowMode] = useState(savedSettings?.slowMode ?? 0);
+  const [maxMessageLength, setMaxMessageLength] = useState(savedSettings?.maxMessageLength ?? 5000);
+  const [enableReports, setEnableReports] = useState(savedSettings?.enableReports ?? true);
   const [settingsSaving, setSettingsSaving] = useState(false);
   
   // SEO 工具状态 - 从 localStorage 初始化
