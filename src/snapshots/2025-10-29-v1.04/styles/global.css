@@ -1,0 +1,37 @@
+/* 消息滚动容器 */
+.chat-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS 惯性滚动 */
+  overflow-anchor: none;            /* 关闭自动锚点，避免向上跳 */
+  scroll-behavior: auto;            /* 稳定：程序控制滚动 */
+}
+
+/* 末尾锚点：在这里恢复锚点 */
+.chat-anchor {
+  overflow-anchor: auto;
+  height: 1px;
+}
+
+/* 阻止页面把回弹传给上层，避免把整个页面顶上去 */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
+/* mobile menu hidden by default */
+#mobile-open-sidebar {
+  display: none;
+}
+
+#sidebar-brand {
+  display: none;
+}
+
+#midControlsAnchor {
+  display: none;
+}
+
+:root {
+  --sab: env(safe-area-inset-bottom);
+}
+
+

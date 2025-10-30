@@ -1,0 +1,1 @@
+let timer:any;export function initIdle(onTimeout:()=>void,ms=40*60*1000){const reset=()=>{clearTimeout(timer);timer=setTimeout(onTimeout,ms)};['mousemove','keydown','touchstart','wheel','click'].forEach(evt=>window.addEventListener(evt,reset,{passive:true} as any));reset();return()=>clearTimeout(timer)}

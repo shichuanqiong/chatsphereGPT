@@ -1,0 +1,300 @@
+/* Mobile-only layout adjustments */
+@media (max-width: 768px) {
+  /* 布局：隐藏左右栏，让中间全屏 */
+  #app-shell {
+    position: relative;
+    display: block;
+  }
+
+  /* 顶部条固定 */
+  #topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  /* 左侧栏默认隐藏，改成抽屉 */
+  #sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 78%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 50;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+  }
+
+  /* 抽屉遮罩层 */
+  html[data-sidebar="open"] #sidebar {
+    transform: translateX(0);
+  }
+  html[data-sidebar="open"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 45;
+  }
+
+  /* 右侧广告隐藏 */
+  #ads-right { display: none !important; }
+
+  /* 聊天主体填满高度，给底部输入预留空间 */
+  #chat-main {
+    min-height: calc(100dvh - 56px);
+    padding-top: 8px;
+    padding-bottom: 64px;
+  }
+
+  /* 消息滚动区 */
+  #chat-scroll {
+    max-height: none;
+    height: calc(100dvh - 56px - 64px - 8px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 底部输入固定到底部 */
+  #input-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(max(var(--kb, 0px), var(--kb-bottom, 0px)) + max(8px, var(--sab, 0px)));
+    z-index: 41;
+    padding: max(6px, env(safe-area-inset-bottom) / 2) 10px 8px;
+    background: rgba(16,16,16,0.9);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    transition: bottom 0.18s ease, padding-bottom 0.18s ease;
+  }
+
+  /* Emoji 面板：靠右悬浮 */
+  .emoji-panel {
+    position: fixed;
+    right: 10px;
+    bottom: 64px;
+    max-width: 92vw;
+    max-height: 46vh;
+    overflow: auto;
+    z-index: 60;
+  }
+
+  /* 手机菜单按钮 */
+  #mobile-open-sidebar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  /* header 保持一行，显示 LOGO + Inbox + 铃铛 + 头像 */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding-inline: 12px;
+  }
+
+  /* LOGO/标题在窄屏稍微缩小，避免挤到 Inbox */
+  #topbar .brand,
+  #topbar .logo,
+  #topbar .title {
+    max-width: 44vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 顶部广告搬到 header 下方后，做成整行横幅 */
+  #adTopMobileAnchor #adTop {
+    display: block;
+    width: 100%;
+    margin: 4px 0 8px;
+    border-radius: 10px;
+    overflow: clip;
+  }
+
+  #midControlsAnchor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Header 品牌移至侧栏后，隐藏 header 内品牌区域 */
+  #topbar .header-brand {
+    display: none;
+  }
+
+  /* 侧栏顶部展示品牌 */
+  #sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 52;
+  }
+}
+
+/* 桌面端隐藏“手机菜单按钮” */
+@media (min-width: 769px) {
+  #mobile-open-sidebar { display: none !important; }
+}
+/* 只作用于窄屏：桌面端完全不生效 */
+@media (max-width: 768px) {
+  .top-banner-ad {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 40px;
+    z-index: 1000;
+  }
+
+  .main-header {
+    margin-top: 50px;
+  }
+
+  /* 恢复 header 左侧品牌（不隐藏） */
+
+  .messages-container { padding-bottom: 90px; }
+  .messages-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: auto;
+    overflow-anchor: none;
+  }
+  .messages-end-anchor { height: 1px; overflow-anchor: auto; }
+
+  /* 布局：隐藏左右栏，让中间全屏 */
+  #app-shell {
+    position: relative;
+    display: block; /* 保留原本布局，不强制改 grid/flex */
+  }
+
+  /* 顶部条固定 */
+  #topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  /* 恢复 header 默认的左右布局 */
+  #topbar .topbar-inner{ display:block !important; }
+  /* 移动端隐藏广告中栏（仍保留 anchor，无 UI 占位） */
+  #topbar .ad-slot{ display:none !important; }
+
+  /* 左侧栏默认隐藏，改成抽屉 */
+  #sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 78%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 50;
+    /* 背景与滚动 */
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+    /* 为顶部广告(40) + header(56) 留出空间，避免重叠 */
+    padding-top: 96px;
+  }
+
+  /* 抽屉遮罩层（用 :root 上的 data-state 控制显隐） */
+  html[data-sidebar="open"] #sidebar {
+    transform: translateX(0);
+  }
+  html[data-sidebar="open"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 45;
+  }
+
+  /* 右侧广告隐藏（不挤占空间） */
+  #ads-right { display: none !important; }
+
+  /* 聊天主体填满高度，给底部输入预留空间 */
+  #chat-main {
+    min-height: calc(100dvh - 56px); /* 顶部条高度按实际 */
+    padding-top: 8px;
+    padding-bottom: 64px; /* 预留输入条高度 */
+  }
+
+  /* 消息滚动区：可滚动，避免被键盘挡住 */
+  #chat-scroll {
+    max-height: none;
+    height: calc(100dvh - 56px - 64px - 8px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 底部输入固定到底部，100% 宽 */
+  #input-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 41;
+    padding: 8px 10px;
+    background: rgba(16,16,16,0.9);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* 顶部广告搬到 header 下方后，做成整行横幅 */
+  #adTopMobileAnchor #adTop {
+    display: block;
+    width: 100%;
+    margin: 4px 0 8px;
+    border-radius: 10px;
+    overflow: clip;
+  }
+
+  /* Emoji 面板：靠右悬浮，点击输入不抖动 */
+  .emoji-panel {
+    position: fixed;
+    right: 10px;
+    bottom: 64px;    /* 刚好在输入框上方 */
+    max-width: 92vw;
+    max-height: 46vh;
+    overflow: auto;
+    z-index: 60;
+  }
+
+  /* 手机打开侧栏按钮样式；桌面端隐藏 */
+  #mobile-open-sidebar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  /* 侧边栏中的品牌在移动端显示，桌面隐藏 */
+  .sidebar-brand { display: block; }
+}
+
+/* 桌面端隐藏“手机菜单按钮” */
+@media (min-width: 769px) {
+  #mobile-open-sidebar { display: none !important; }
+  .sidebar-brand { display: none !important; }
+}
+
+
