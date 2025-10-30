@@ -81,7 +81,7 @@ export default function Header({
       <header
         id="topbar"
         ref={topbarRef}
-        className="sticky top-0 z-40 h-16 md:h-20 w-full border-b border-white/10 bg-black/50 backdrop-blur flex items-center"
+        className="sticky top-0 z-40 h-20 md:h-24 w-full border-b border-white/10 bg-black/50 backdrop-blur flex items-center"
         style={{paddingTop:'env(safe-area-inset-top)'}}
       >
         <div className="max-w-[1400px] mx-auto w-full px-4 flex items-center gap-4">

@@ -1267,7 +1267,7 @@ export default function Home() {
           {/* 消息滚动区（占满剩余空间） */}
           <div
             id="chat-scroll"
-            className="chat-scroll messages-container flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-3 pr-2 pb-[96px]"
+            className="chat-scroll messages-container flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-3 pr-2 pb-[120px]"
             ref={listRef}
             onScroll={onScroll}
             data-chat-scroll="1"
