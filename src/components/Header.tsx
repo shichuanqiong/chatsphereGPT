@@ -81,13 +81,13 @@ export default function Header({
       <header
         id="topbar"
         ref={topbarRef}
-        className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10"
+        className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 px-3 md:px-6"
         style={{paddingTop:'env(safe-area-inset-top)'}}
       >
-        {/* Row 1: 导航行（Logo + 右侧按钮） */}
-        <div className="h-20 md:h-24 px-3 md:px-6 flex items-center">
-          {/* 左：Logo + 站名 */}
-          <div className="flex items-center gap-3">
+        {/* 一行三段：左中右 */}
+        <div className="h-16 md:h-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {/* 左：Logo + 品牌 */}
+          <div className="min-w-0 flex items-center gap-3">
             <button id="mobile-open-sidebar" aria-label="Open menu">☰</button>
             <div id="midControlsAnchor" className="mid-controls-anchor flex items-center gap-2"></div>
             <div className="header-brand flex items-center gap-3 brand">
@@ -101,8 +101,16 @@ export default function Header({
             </div>
           </div>
 
-          {/* 右：Inbox / 铃铛 / 用户名 / 头像 */}
-          <div id="rightControls" className="ml-auto flex items-center gap-2">
+          {/* 中：Top Banner（自适应居中） */}
+          <div className="justify-self-center w-full max-w-[728px] px-2">
+            <div className="h-[44px] md:h-[56px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_6px_24px_rgba(0,0,0,.25)] flex items-center justify-center">
+              <span className="text-sm text-zinc-200/90">Ad — Top Banner</span>
+              {/* 之后替换为 <ResponsiveAd slot="XXXX" /> */}
+            </div>
+          </div>
+
+          {/* 右：操作区（靠右对齐） */}
+          <div id="rightControls" className="justify-self-end flex items-center gap-2">
             <div
               id="btnInbox"
               className="relative"
@@ -191,18 +199,6 @@ export default function Header({
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Top Banner（居中、固定高度，避免 CLS） */}
-        <div className="px-3 md:px-6 pb-2">
-          <div className="w-full flex justify-center">
-            <div className="w-full max-w-[728px]">
-              <div className="h-[48px] md:h-[60px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_6px_24px_rgba(0,0,0,.25)] flex items-center justify-center">
-                <span className="text-sm text-zinc-200/90">Ad — Top Banner</span>
-                {/* 以后这里替换为 <ResponsiveAd slot="XXXX" /> */}
-              </div>
             </div>
           </div>
         </div>
