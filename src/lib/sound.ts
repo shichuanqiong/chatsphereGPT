@@ -3,10 +3,11 @@ type Source = { src: string; type: string };
 
 export const SOURCES: Record<string, Source[]> = {
   ding: [
-    // 用实际存在的文件名（相对路径，不要以 / 开头）
-    { src: 'sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
-    { src: 'sfx/pop_soft.wav', type: 'audio/wav' },
-    // 最后兜底的 CDN（带 @main 更稳）
+    // 现在都有了这些文件，按照浏览器支持度排列
+    { src: 'sfx/ding.mp3', type: 'audio/mpeg' },
+    { src: 'sfx/ding.wav', type: 'audio/wav' },
+    { src: 'sfx/ding.ogg', type: 'audio/ogg' },
+    // CDN 备用
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
 } as const;

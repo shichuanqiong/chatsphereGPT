@@ -1,0 +1,1 @@
+Soft modern ding sound for notification. Place files in public/sfx/
