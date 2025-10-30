@@ -3,8 +3,9 @@ type Source = { src: string; type?: string };
 
 const SOURCES: Record<string, Source[]> = {
   // "叮"提示音，多源回退：优先本地文件 → CDN备用
+  // 使用 BASE_URL 支持本地和 GitHub Pages
   ding: [
-    { src: '/sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
+    { src: `${import.meta.env.BASE_URL}sfx/new-notification-010-352755.mp3`, type: 'audio/mpeg' },
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
 };
