@@ -4,19 +4,11 @@
     <meta charset="utf-8">
     <title>ChatSphere</title>
     <script>
-        // SPA 路由修复：将所有 404 重定向到 index.html
-        // GitHub Pages 会在找不到文件时返回 404.html
-        // 我们在这里重定向回首页，让 React Router 处理路由
-        var pathSegmentsToKeep = 1; // 保留 /chatsphereGPT/ 这一段
+        // 简单的 SPA 路由修复：将 URL 存储到 sessionStorage，然后重定向到 index.html
         var l = window.location;
-        l.replace(
-            l.protocol + '//' + l.hostname + 
-            (l.port ? ':' + l.port : '') + 
-            '/chatsphereGPT/?' +
-            l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-            (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-            l.hash
-        );
+        sessionStorage.redirect = l.pathname + l.search + l.hash;
+        // 重定向到项目根路径
+        l.replace('/chatsphereGPT/');
     </script>
 </head>
 <body>
