@@ -1177,7 +1177,7 @@ export default function Home() {
         {/* 移动抽屉已移除以恢复桌面布局稳定 */}
 
         {/* 中间聊天区 */}
-        <section id="chat-main" className="flex-1 min-w-0 rounded-2xl border border-white/10 bg-black/40 backdrop-blur flex flex-col h-full">
+        <section id="chat-main" className="flex-1 min-w-0 min-h-0 rounded-2xl border border-white/10 bg-black/40 backdrop-blur flex flex-col h-full">
           {/* 标题行（房间或 DM 标题） */}
           <div className="h-12 px-4 border-b border-white/10 flex items-center justify-between shrink-0 relative">
             {!dmId ? (
@@ -1267,11 +1267,11 @@ export default function Home() {
           {/* 消息滚动区（占满剩余空间） */}
           <div
             id="chat-scroll"
-            className="chat-scroll messages-container flex-1 overflow-y-auto px-4 py-3 space-y-3"
+            className="chat-scroll messages-container flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-3 pr-2 pb-[96px]"
             ref={listRef}
             onScroll={onScroll}
             data-chat-scroll="1"
-            style={{ paddingBottom: padBottom, scrollPaddingBottom: padBottom }}
+            style={{ scrollPaddingBottom: padBottom }}
           >
             {messages
               .filter((m) => {
@@ -1349,11 +1349,11 @@ export default function Home() {
             })}
           </div>
 
-          {/* 底部输入框（不会再跑到中间） */}
+          {/* 底部输入框（sticky，不会再跑到中间） */}
           <div
             id="input-bar"
             ref={composerWrapRef}
-            className="border-t border-white/10 px-3 py-3"
+            className="sticky bottom-0 z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 px-3 py-3"
           >
             <Composer
               ref={composerControlRef}

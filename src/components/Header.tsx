@@ -81,9 +81,10 @@ export default function Header({
       <header
         id="topbar"
         ref={topbarRef}
-        className="sticky top-0 z-40 h-24 w-full border-b border-white/10 bg-black/50 backdrop-blur flex items-center"
+        className="sticky top-0 z-40 h-16 md:h-20 w-full border-b border-white/10 bg-black/50 backdrop-blur flex items-center"
+        style={{paddingTop:'env(safe-area-inset-top)'}}
       >
-        <div className="max-w-[1400px] mx-auto w-full px-4 grid grid-cols-[auto,1fr,auto] items-center gap-4">
+        <div className="max-w-[1400px] mx-auto w-full px-4 flex items-center gap-4">
           {/* 左：Logo + 站名 */}
           <div className="flex items-center gap-3">
             <button id="mobile-open-sidebar" aria-label="Open menu">☰</button>
@@ -99,10 +100,8 @@ export default function Header({
             </div>
           </div>
 
-          {/* 中：空白（由于移除广告位） */}
-
           {/* 右：Inbox / 铃铛 / 用户名 / 头像 / Logout */}
-          <div id="rightControls" className="flex items-center gap-2">
+          <div id="rightControls" className="ml-auto flex items-center gap-2">
             <div
               id="btnInbox"
               className="relative"
