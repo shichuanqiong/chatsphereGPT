@@ -16,7 +16,7 @@ import {
 
 // Firebase 配置（从 Firebase 控制台复制）
 const firebaseConfig = {
-  apiKey: 'AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENviIGc',
+  apiKey: 'AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENvilGc',
   authDomain: 'chatspheregpt.firebaseapp.com',
   databaseURL: 'https://chatspheregpt-default-rtdb.firebaseio.com',
   projectId: 'chatspheregpt',
