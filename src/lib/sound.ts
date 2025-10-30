@@ -2,9 +2,10 @@
 type Source = { src: string; type: string };
 
 export const SOURCES: Record<string, Source[]> = {
-  // 主要提示音：本地优先，CDN 备用
+  // 主要提示音：使用实际存在的文件
   ding: [
     { src: 'sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
+    { src: 'sfx/pop_soft.wav', type: 'audio/wav' },
     { src: 'sfx/ding_soft.wav', type: 'audio/wav' },
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
