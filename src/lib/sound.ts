@@ -1,11 +1,16 @@
 // src/lib/sound.ts
 type Source = { src: string; type: string };
 
+const BASE = (import.meta as any).env?.BASE_URL || '/';
+
+const url = (p: string) => new URL(p, BASE).toString();
+
 export const SOURCES: Record<string, Source[]> = {
   ding: [
-    { src: 'sfx/ding.mp3', type: 'audio/mpeg' },
-    { src: 'sfx/ding.ogg', type: 'audio/ogg' },
-    { src: 'sfx/ding.wav', type: 'audio/wav' },
+    { src: url('sfx/ding.mp3'), type: 'audio/mpeg' },
+    { src: url('sfx/ding.ogg'), type: 'audio/ogg' },
+    { src: url('sfx/ding.wav'), type: 'audio/wav' },
+    { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' }, // 兜底
   ],
 } as const;
 
@@ -97,20 +102,14 @@ class SoundManager {
     // 逐个源尝试，打印完整 URL
     for (const s of list) {
       try {
-        // 构建完整 URL，处理 GitHub Pages 子路径
-        const base = (import.meta as any).env?.BASE_URL || '/';
-        const url = s.src.startsWith('http')
-          ? s.src
-          : new URL(s.src, base).toString();
+        console.log('[Sound] Trying:', s.src);
         
-        console.log('[Sound] Trying:', url);
-        
-        const audio = new Audio(url);
+        const audio = new Audio(s.src);
         audio.type = s.type;
         audio.crossOrigin = 'anonymous';
         
         await audio.play();
-        console.log('[Sound] ✅ Played:', url);
+        console.log('[Sound] ✅ Played:', s.src);
         return;
       } catch (err) {
         console.warn('[Sound] Failed:', s.src, err);
