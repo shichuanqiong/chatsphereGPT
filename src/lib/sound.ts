@@ -6,7 +6,6 @@ export const SOURCES: Record<string, Source[]> = {
   ding: [
     { src: 'sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
     { src: 'sfx/pop_soft.wav', type: 'audio/wav' },
-    { src: 'sfx/ding_soft.wav', type: 'audio/wav' },
     { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
   
@@ -31,7 +30,7 @@ class SoundManager {
       try {
         this.unlocked = true;
         console.log('[Sound] Audio unlocked by user interaction');
-        // 预热音频，让浏览器允许后续播放
+        // 预热音频
         this.play('ding').catch(() => {});
         window.removeEventListener('pointerdown', unlock);
         window.removeEventListener('keydown', unlock);
@@ -42,7 +41,7 @@ class SoundManager {
     window.addEventListener('pointerdown', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
 
-    (window as any).Sound = this; // 调试用
+    (window as any).Sound = this;
   }
 
   private readMuted() {
@@ -108,28 +107,14 @@ class SoundManager {
         console.log(`[Sound] Trying source ${i + 1}/${list.length}:`, s.src);
         
         const audio = new Audio();
-        
-        // 构建完整 URL（支持相对路径和子路径）
-        let finalSrc = s.src;
-        if (!s.src.startsWith('http')) {
-          // 本地文件：使用 BASE_URL
-          const baseUrl = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
-          finalSrc = baseUrl ? `${baseUrl}/${s.src}` : s.src;
-        }
-        
-        audio.src = finalSrc;
+        audio.src = s.src;
         audio.type = s.type;
         audio.crossOrigin = 'anonymous';
         
-        // 先加载，避免 404/跨域无声
-        if (audio.load) {
-          audio.load();
-        }
-        
-        console.log('[Sound] Playing:', finalSrc);
+        console.log('[Sound] Playing:', s.src);
         await audio.play();
         console.log('[Sound] ✅ Successfully played:', s.src);
-        return; // 成功
+        return;
       } catch (err) {
         console.warn(`[Sound] Failed to play source ${i + 1}:`, err);
       }
