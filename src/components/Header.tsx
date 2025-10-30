@@ -81,10 +81,11 @@ export default function Header({
       <header
         id="topbar"
         ref={topbarRef}
-        className="sticky top-0 z-40 h-20 md:h-24 w-full border-b border-white/10 bg-black/50 backdrop-blur flex items-center"
+        className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10"
         style={{paddingTop:'env(safe-area-inset-top)'}}
       >
-        <div className="max-w-[1400px] mx-auto w-full px-4 flex items-center gap-4">
+        {/* Row 1: 导航行（Logo + 右侧按钮） */}
+        <div className="h-20 md:h-24 px-3 md:px-6 flex items-center">
           {/* 左：Logo + 站名 */}
           <div className="flex items-center gap-3">
             <button id="mobile-open-sidebar" aria-label="Open menu">☰</button>
@@ -100,7 +101,7 @@ export default function Header({
             </div>
           </div>
 
-          {/* 右：Inbox / 铃铛 / 用户名 / 头像 / Logout */}
+          {/* 右：Inbox / 铃铛 / 用户名 / 头像 */}
           <div id="rightControls" className="ml-auto flex items-center gap-2">
             <div
               id="btnInbox"
@@ -144,7 +145,7 @@ export default function Header({
               {muted ? '🔕' : '🔔'}
             </button>
 
-            {/* 用户名显示在 Logout 左边 */}
+            {/* 用户名 */}
             <div className="mx-1 text-sm text-white/90">
               {currentProfile?.nickname || 'Guest'}
             </div>
@@ -190,6 +191,18 @@ export default function Header({
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Top Banner（居中、固定高度，避免 CLS） */}
+        <div className="px-3 md:px-6 pb-2">
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-[728px]">
+              <div className="h-[48px] md:h-[60px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_6px_24px_rgba(0,0,0,.25)] flex items-center justify-center">
+                <span className="text-sm text-zinc-200/90">Ad — Top Banner</span>
+                {/* 以后这里替换为 <ResponsiveAd slot="XXXX" /> */}
+              </div>
             </div>
           </div>
         </div>

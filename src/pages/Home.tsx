@@ -10,7 +10,6 @@ import { auth, db, presenceOnline, startPresenceHeartbeat } from '../firebase';
 import Composer, { type ComposerRef } from '../components/Composer';
 import BackgroundRotator from '../components/BackgroundRotator';
 import Header from '../components/Header';
-import TopAdPlaceholder from '../components/TopAdPlaceholder';
 import { useSoundToggle } from '../hooks/useSoundToggle';
 import { Sound } from '../lib/sound';
 import CollapseSection from '../components/CollapseSection';
@@ -40,27 +39,6 @@ type Message = { authorId: string; authorName: string; type: 'text' | 'gif'; con
 type Profile = { uid: string; nickname: string; gender: 'male'|'female'; age: number; country: string; bio?: string; isGuest?: boolean; avatarUrl?: string; };
 type ThreadMeta = { threadId: string; peerId: string; lastMsg?: string; lastSender?: string; lastTs?: number; unread?: number; };
 type RoomMeta = { roomId: string; lastReadTs?: number; unread?: number; };
-// 将顶部横幅在移动端移到 header 下方
-function useMoveTopBannerOnMobile() {
-  useEffect(() => {
-    const ad = document.getElementById('adTop');
-    const adSlot = document.getElementById('adTopSlot');
-    const mobileAnchor = document.getElementById('adTopMobileAnchor');
-    if (!ad || !adSlot || !mobileAnchor) return;
-
-    const mql = window.matchMedia('(max-width: 768px)');
-    const place = () => {
-      if (mql.matches) {
-        if (ad.parentElement !== mobileAnchor) mobileAnchor.appendChild(ad);
-      } else {
-        if (ad.parentElement !== adSlot) adSlot.appendChild(ad);
-      }
-    };
-    place();
-    mql.addEventListener?.('change', place);
-    return () => mql.removeEventListener?.('change', place);
-  }, []);
-}
 
 // 将 Inbox + Bell 移到中间锚点（仅移动端），桌面复原
 function useMoveControlsOnMobile() {
@@ -166,8 +144,6 @@ export default function Home() {
   const [isUserRoom, setIsUserRoom] = useState(false);
   const [viewedProfile, setViewedProfile] = useState<Profile | null>(null);
 
-  // 移动端广告位置调整
-  useMoveTopBannerOnMobile();
   // 移动端控件重排（Inbox + Bell 移到侧栏按钮旁）
   useMoveControlsOnMobile();
 
@@ -1026,16 +1002,6 @@ export default function Home() {
           />
         }
       />
-
-      {/* Header 下方的广告位：顶部横幅 */}
-      <div className="w-full flex justify-center px-3 md:px-6 py-2">
-        <div className="w-full max-w-[728px]">
-          <TopAdPlaceholder sticky={false} />
-        </div>
-      </div>
-
-      {/* 移动端广告锚点：仅作为挂载点，不含任何内容 */}
-      <div id="adTopMobileAnchor"></div>
 
       <div id="app-shell" className="flex-1">
         <div className="max-w-[1400px] mx-auto flex gap-4 pt-3 pb-3 h-[calc(100vh-6rem)] overflow-hidden">
