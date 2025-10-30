@@ -4,17 +4,6 @@
   <meta charset='UTF-8'/>
   <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
   <title>ChatSphere</title>
-  <script>
-    // GitHub Pages SPA 路由修复
-    // 当从 404.html 重定向回来时，恢复原始路径
-    (function() {
-      var redirect = sessionStorage.redirect;
-      delete sessionStorage.redirect;
-      if (redirect && redirect !== location.href) {
-        history.replaceState(null, null, redirect);
-      }
-    }());
-  </script>
 </head>
 <body class='bg-black'>
   <div id='root'></div>
