@@ -6,7 +6,7 @@ import { createRoomAndEnter } from '../lib/rooms';
 import { paths } from '../utils/db';
 import Avatar from './Avatar';
 
-export default function Sidebar({ currentRoom, onSelectRoom }: { currentRoom?: string, onSelectRoom: (id: string) => void }) {
+export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: { currentRoom?: string, onSelectRoom: (id: string) => void, onUserSelected?: (user: any) => void }) {
   const uid = (window as any)._uid;
   const [rooms, setRooms] = useState<any[]>([]);
   const [online, setOnline] = useState<any>({});
@@ -172,7 +172,13 @@ export default function Sidebar({ currentRoom, onSelectRoom }: { currentRoom?: s
                 </div>
               </div>
               {u.uid !== uid && (
-                <button className='text-xs px-2 py-1 bg-white/10 rounded' onClick={() => {}} />
+                <button 
+                  className='text-xs px-2 py-1 bg-white/10 rounded hover:bg-white/20 transition' 
+                  onClick={() => onUserSelected?.(u)} 
+                  title="Open DM"
+                >
+                  💬
+                </button>
               )}
             </div>
           ))}

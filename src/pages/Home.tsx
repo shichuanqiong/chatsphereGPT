@@ -1057,6 +1057,8 @@ export default function Home() {
                         country: user.country ?? '',
                       };
                       openDM(profile);
+                      // Close sidebar on mobile after selecting user
+                      document.documentElement.removeAttribute('data-sidebar');
                     }}
                     onOpenProfile={handleOpenProfile}
                   />
@@ -1111,6 +1113,8 @@ export default function Home() {
                       country: user.country ?? '',
                     };
                     openDM(profile);
+                    // Close sidebar on mobile after selecting user
+                    document.documentElement.removeAttribute('data-sidebar');
                   }}
                   onOpenProfile={handleOpenProfile}
                 />
