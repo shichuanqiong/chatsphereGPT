@@ -1,42 +1,37 @@
 // src/lib/sound.ts
-type Source = { src: string; type?: string };
+type Source = { src: string; type: string };
 
-const SOURCES: Record<string, Source[]> = {
-  // "叮"提示音，多源回退：优先本地文件 → CDN备用
-  // 使用 BASE_URL 支持本地和 GitHub Pages
+export const SOURCES: Record<string, Source[]> = {
+  // 主要提示音：本地优先，CDN 备用
   ding: [
-    { src: `${import.meta.env.BASE_URL}sfx/new-notification-010-352755.mp3`, type: 'audio/mpeg' },
-    { src: 'https://cdn.jsdelivr.net/gh/antfu/static/sfx/notification.mp3', type: 'audio/mpeg' },
+    { src: 'sfx/new-notification-010-352755.mp3', type: 'audio/mpeg' },
+    { src: 'sfx/ding_soft.wav', type: 'audio/wav' },
+    { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
   ],
-};
-
-const canPlay = (audio: HTMLAudioElement, s: Source) =>
-  !s.type || audio.canPlayType(s.type) !== '';
+  
+  // 可选：其他音效
+  birds: [{ src: 'sfx/forest_birds_mix.wav', type: 'audio/wav' }],
+  pop: [{ src: 'sfx/pop_soft.wav', type: 'audio/wav' }],
+} as const;
 
 class SoundManager {
-  private audio = new Audio();
   private unlocked = false;
   private muted = false;
   private lastPlay = 0;
-  private throttleMs = 150; // 最短间隔，避免短时间多次ding
+  private throttleMs = 150;
 
   constructor() {
-    this.audio.preload = 'auto';
-    this.audio.crossOrigin = 'anonymous';
     this.muted = this.readMuted();
-    
     console.log('[Sound] Initialized. Muted:', this.muted);
 
     // 页面任意交互后解锁
     const unlock = () => {
       if (this.unlocked) return;
       try {
-        this.audio.muted = false;
-        this.audio.volume = 1;
-        // 某些浏览器需要先 load
-        this.audio.load();
         this.unlocked = true;
         console.log('[Sound] Audio unlocked by user interaction');
+        // 预热音频，让浏览器允许后续播放
+        this.play('ding').catch(() => {});
         window.removeEventListener('pointerdown', unlock);
         window.removeEventListener('keydown', unlock);
       } catch (err) {
@@ -52,25 +47,25 @@ class SoundManager {
   private readMuted() {
     try { return localStorage.getItem('mute') === '1'; } catch { return false; }
   }
+  
   private writeMuted(v: boolean) {
     try { localStorage.setItem('mute', v ? '1' : '0'); } catch {}
   }
 
   isMuted() { return this.muted; }
+  
   mute() { 
     this.muted = true; 
     this.writeMuted(true); 
     console.log('[Sound] Muted');
   }
+  
   unmute() { 
     this.muted = false; 
     this.writeMuted(false); 
     console.log('[Sound] Unmuted');
   }
 
-  /**
-   * 强制取消静音（调试/恢复用）
-   */
   forceUnmute() { 
     this.unmute(); 
     this.unlocked = true; 
@@ -105,50 +100,37 @@ class SoundManager {
       return;
     }
 
-    // 逐个源尝试：优先使用一次性 Audio 实例，规避某些浏览器对共享实例/隐藏标签页的限制
+    // 逐个源尝试
     for (let i = 0; i < list.length; i++) {
       const s = list[i];
       try {
         console.log(`[Sound] Trying source ${i + 1}/${list.length}:`, s.src);
-        const a = new Audio();
-        a.crossOrigin = 'anonymous';
-        a.preload = 'auto';
-        a.src = s.src;
-        if (!canPlay(a, s)) {
-          console.log('[Sound] Browser cannot play this format:', s.type);
-          continue;
+        
+        const audio = new Audio();
+        
+        // 构建完整 URL（支持相对路径和子路径）
+        let finalSrc = s.src;
+        if (!s.src.startsWith('http')) {
+          // 本地文件：使用 BASE_URL
+          const baseUrl = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+          finalSrc = baseUrl ? `${baseUrl}/${s.src}` : s.src;
         }
-        a.volume = 1;
-        console.log('[Sound] Playing new Audio instance...');
-        await a.play();
+        
+        audio.src = finalSrc;
+        audio.type = s.type;
+        audio.crossOrigin = 'anonymous';
+        
+        // 先加载，避免 404/跨域无声
+        if (audio.load) {
+          audio.load();
+        }
+        
+        console.log('[Sound] Playing:', finalSrc);
+        await audio.play();
         console.log('[Sound] ✅ Successfully played:', s.src);
         return; // 成功
       } catch (err) {
         console.warn(`[Sound] Failed to play source ${i + 1}:`, err);
-      }
-    }
-    
-    // 兜底：再尝试共享实例
-    console.log('[Sound] Trying fallback with shared instance...');
-    for (let i = 0; i < list.length; i++) {
-      const s = list[i];
-      try {
-        console.log(`[Sound] Trying shared audio ${i + 1}/${list.length}:`, s.src);
-        if (!canPlay(this.audio, s)) {
-          console.log('[Sound] Shared audio cannot play format:', s.type);
-          continue;
-        }
-        this.audio.pause();
-        this.audio.currentTime = 0;
-        this.audio.src = s.src;
-        this.audio.volume = 1;
-        this.audio.load();
-        console.log('[Sound] Playing shared Audio instance...');
-        await this.audio.play();
-        console.log('[Sound] ✅ Successfully played with shared instance:', s.src);
-        return;
-      } catch (err) {
-        console.warn(`[Sound] Failed with shared audio ${i + 1}:`, err);
       }
     }
     
