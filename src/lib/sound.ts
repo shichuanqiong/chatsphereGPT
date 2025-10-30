@@ -23,6 +23,8 @@ class SoundManager {
     this.audio.preload = 'auto';
     this.audio.crossOrigin = 'anonymous';
     this.muted = this.readMuted();
+    
+    console.log('[Sound] Initialized. Muted:', this.muted);
 
     // 页面任意交互后解锁
     const unlock = () => {
@@ -33,9 +35,12 @@ class SoundManager {
         // 某些浏览器需要先 load
         this.audio.load();
         this.unlocked = true;
+        console.log('[Sound] Audio unlocked by user interaction');
         window.removeEventListener('pointerdown', unlock);
         window.removeEventListener('keydown', unlock);
-      } catch {}
+      } catch (err) {
+        console.error('[Sound] Error unlocking audio:', err);
+      }
     };
     window.addEventListener('pointerdown', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
@@ -51,54 +56,102 @@ class SoundManager {
   }
 
   isMuted() { return this.muted; }
-  mute() { this.muted = true; this.writeMuted(true); }
-  unmute() { this.muted = false; this.writeMuted(false); }
+  mute() { 
+    this.muted = true; 
+    this.writeMuted(true); 
+    console.log('[Sound] Muted');
+  }
+  unmute() { 
+    this.muted = false; 
+    this.writeMuted(false); 
+    console.log('[Sound] Unmuted');
+  }
 
   /**
    * 强制取消静音（调试/恢复用）
    */
-  forceUnmute() { this.unmute(); this.unlocked = true; }
+  forceUnmute() { 
+    this.unmute(); 
+    this.unlocked = true; 
+    console.log('[Sound] Force unmuted and unlocked');
+  }
 
   /**
    * 播放提示音（自动回退多源，出错继续尝试下一源）
    */
   async play(name: keyof typeof SOURCES) {
     const now = Date.now();
-    if (now - this.lastPlay < this.throttleMs) return;
+    if (now - this.lastPlay < this.throttleMs) {
+      console.log('[Sound] Throttled - too soon to play again');
+      return;
+    }
     this.lastPlay = now;
 
-    if (this.muted) return;
+    if (this.muted) {
+      console.log('[Sound] Muted - skipping playback');
+      return;
+    }
+    
+    if (!this.unlocked) {
+      console.warn('[Sound] Audio not unlocked yet - need user interaction first');
+    }
+
+    console.log('[Sound] Playing:', name, '- Unlocked:', this.unlocked);
 
     const list = SOURCES[name];
+    if (!list) {
+      console.error('[Sound] No sources found for:', name);
+      return;
+    }
 
     // 逐个源尝试：优先使用一次性 Audio 实例，规避某些浏览器对共享实例/隐藏标签页的限制
-    for (const s of list) {
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
       try {
+        console.log(`[Sound] Trying source ${i + 1}/${list.length}:`, s.src);
         const a = new Audio();
         a.crossOrigin = 'anonymous';
         a.preload = 'auto';
         a.src = s.src;
-        if (!canPlay(a, s)) continue;
+        if (!canPlay(a, s)) {
+          console.log('[Sound] Browser cannot play this format:', s.type);
+          continue;
+        }
         a.volume = 1;
+        console.log('[Sound] Playing new Audio instance...');
         await a.play();
+        console.log('[Sound] ✅ Successfully played:', s.src);
         return; // 成功
-      } catch {}
+      } catch (err) {
+        console.warn(`[Sound] Failed to play source ${i + 1}:`, err);
+      }
     }
+    
     // 兜底：再尝试共享实例
-    for (const s of list) {
+    console.log('[Sound] Trying fallback with shared instance...');
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
       try {
-        if (!canPlay(this.audio, s)) continue;
+        console.log(`[Sound] Trying shared audio ${i + 1}/${list.length}:`, s.src);
+        if (!canPlay(this.audio, s)) {
+          console.log('[Sound] Shared audio cannot play format:', s.type);
+          continue;
+        }
         this.audio.pause();
         this.audio.currentTime = 0;
         this.audio.src = s.src;
         this.audio.volume = 1;
         this.audio.load();
+        console.log('[Sound] Playing shared Audio instance...');
         await this.audio.play();
+        console.log('[Sound] ✅ Successfully played with shared instance:', s.src);
         return;
-      } catch {}
+      } catch (err) {
+        console.warn(`[Sound] Failed with shared audio ${i + 1}:`, err);
+      }
     }
-    // 如果所有源都失败，静默；保留日志即可
-    // console.error('No playable audio sources for', name);
+    
+    console.error('[Sound] ❌ All audio sources failed');
   }
 }
 
