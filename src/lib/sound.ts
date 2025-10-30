@@ -3,12 +3,9 @@ type Source = { src: string; type: string };
 
 export const SOURCES: Record<string, Source[]> = {
   ding: [
-    // 现在都有了这些文件，按照浏览器支持度排列
     { src: 'sfx/ding.mp3', type: 'audio/mpeg' },
-    { src: 'sfx/ding.wav', type: 'audio/wav' },
     { src: 'sfx/ding.ogg', type: 'audio/ogg' },
-    // CDN 备用
-    { src: 'https://cdn.jsdelivr.net/gh/antfu/static@main/sfx/notification.mp3', type: 'audio/mpeg' },
+    { src: 'sfx/ding.wav', type: 'audio/wav' },
   ],
 } as const;
 
