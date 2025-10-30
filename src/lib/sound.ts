@@ -2,7 +2,24 @@
 type Source = { src: string; type: string };
 
 const BASE = (import.meta as any).env?.BASE_URL || '/';
-const url = (p: string) => new URL(p, BASE).toString();
+
+// 更安全的 URL 构造函数
+const url = (p: string): string => {
+  try {
+    // 如果已经是完整 URL，直接返回
+    if (p.startsWith('http')) {
+      return p;
+    }
+    // 使用 BASE_URL 拼接本地路径
+    const fullUrl = new URL(p, BASE).toString();
+    console.log('[Sound] URL constructed:', fullUrl);
+    return fullUrl;
+  } catch (err) {
+    console.error('[Sound] URL construction failed for:', p, 'BASE:', BASE, err);
+    // 兜底：直接拼接
+    return BASE + p;
+  }
+};
 
 export const SOURCES: Record<string, Source[]> = {
   ding: [
