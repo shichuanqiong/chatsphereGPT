@@ -14,15 +14,16 @@ import {
   serverTimestamp,
 } from 'firebase/database';
 
-// Firebase 配置（从 Firebase 控制台复制）
+// Firebase 配置（从 Vite 环境变量读取）
 const firebaseConfig = {
-  apiKey: 'AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENviIGc',
-  authDomain: 'chatspheregpt.firebaseapp.com',
-  databaseURL: 'https://chatspheregpt-default-rtdb.firebaseio.com',
-  projectId: 'chatspheregpt',
-  storageBucket: 'chatspheregpt.firebasestorage.app',
-  messagingSenderId: '421775686973',
-  appId: '1:421775686973:web:c10b0c50f1af2759569954',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 let app: any;
@@ -34,7 +35,29 @@ try {
   console.log('[Firebase] ✅ Initialized successfully');
 } catch (err) {
   console.error('[Firebase] ❌ Initialization failed:', err);
-  console.error('[Firebase] Config:', firebaseConfig);
+  console.error('[Firebase] Make sure all VITE_FIREBASE_* env vars are set');
+  // 显示友好的错误界面
+  document.body.innerHTML = `
+    <div style="
+      color: #fff;
+      background: #1a1a2e;
+      padding: 24px;
+      font-family: monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      <div style="text-align: center; max-width: 500px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Firebase 初始化失败</div>
+        <div style="font-size: 12px; color: #aaa; line-height: 1.6;">
+          <div>请检查 GitHub Actions Secrets 中的 Firebase 配置。</div>
+          <div>打开浏览器控制台查看详细错误信息。</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // Auth - 仅在初始化成功时设置
