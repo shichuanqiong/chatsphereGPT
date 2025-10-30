@@ -25,19 +25,42 @@ const firebaseConfig = {
   appId: '1:421775686973:web:c10b0c50f1af2759569954',
 };
 
-const app = initializeApp(firebaseConfig);
+let app: any;
+let initialized = false;
 
-// Auth
-export const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence);
+try {
+  app = initializeApp(firebaseConfig);
+  initialized = true;
+  console.log('[Firebase] ✅ Initialized successfully');
+} catch (err) {
+  console.error('[Firebase] ❌ Initialization failed:', err);
+  console.error('[Firebase] Config:', firebaseConfig);
+}
 
-// RTDB
-export const db = getDatabase(app);
+// Auth - 仅在初始化成功时设置
+export const auth = initialized ? getAuth(app) : null;
+
+if (initialized && auth) {
+  try {
+    setPersistence(auth, browserLocalPersistence).catch(err => {
+      console.error('[Firebase] Persistence error:', err);
+    });
+  } catch (err) {
+    console.error('[Firebase] setPersistence error:', err);
+  }
+}
+
+// RTDB - 仅在初始化成功时设置
+export const db = initialized ? getDatabase(app) : null;
 
 /** ---------- Presence: 上线/心跳/下线 ---------- */
 
 /** 首次上线或恢复登录时调用：写入在线状态 + onDisconnect 清理 */
 export function presenceOnline(uid: string) {
+  if (!db) {
+    console.error('[Firebase] Database not initialized');
+    return Promise.reject(new Error('Firebase not initialized'));
+  }
   const pRef = ref(db, `/presence/${uid}`);
   try { onDisconnect(pRef).remove(); } catch {}
   return set(pRef, { state: 'online', lastSeen: serverTimestamp() });
@@ -45,6 +68,10 @@ export function presenceOnline(uid: string) {
 
 /** 每 30s 心跳，返回停止函数 */
 export function startPresenceHeartbeat(uid: string) {
+  if (!db) {
+    console.error('[Firebase] Database not initialized');
+    return () => {};
+  }
   const pRef = ref(db, `/presence/${uid}`);
   const tick = () => update(pRef, { lastSeen: serverTimestamp(), state: 'online' });
   tick(); // 立即打一针
@@ -56,6 +83,10 @@ export function startPresenceHeartbeat(uid: string) {
 
 /** 可选：主动标记离线 */
 export function presenceOffline(uid: string) {
+  if (!db) {
+    console.error('[Firebase] Database not initialized');
+    return Promise.reject(new Error('Firebase not initialized'));
+  }
   const pRef = ref(db, `/presence/${uid}`);
   return set(pRef, { state: 'offline', lastSeen: serverTimestamp() });
 }
