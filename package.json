@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "node scripts/copy-404.cjs",
     "preview": "vite preview --port 5173",
     "deploy": "gh-pages -d dist -b gh-pages"
   },
