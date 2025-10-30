@@ -11,6 +11,7 @@ import {
   X,
   Search,
   LogOut,
+  Zap,
 } from "lucide-react";
 import {
   LineChart,
@@ -21,6 +22,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useAnalyticsStream } from "@/hooks/useAnalyticsStream";
 
 // ChatSphere — Admin Dashboard v0.2
 // ▸ 深蓝 + 青紫色系  ▸ 折叠侧栏  ▸ 顶部导航  ▸ 渐变标题  ▸ Recharts 折线图
@@ -97,6 +99,13 @@ export default function AdminDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [section, setSection] = useState<string>("analytics");
   const [userSearch, setUserSearch] = useState("");
+  const [roomSearch, setRoomSearch] = useState("");
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomType, setNewRoomType] = useState<"Official" | "User">("User");
+  
+  // 实时分析数据
+  const { data: liveMetrics, connected: metricsConnected } = useAnalyticsStream();
 
   // 用户列表数据
   const users = [
@@ -107,10 +116,43 @@ export default function AdminDashboard() {
     { name: "Eve", status: "Inactive", messages: 123 },
   ];
 
+  // 房间列表数据
+  const allRooms = [
+    { id: "1", name: "General Chat", type: "Official", members: 1543, messages: 5234 },
+    { id: "2", name: "Photography", type: "Official", members: 342, messages: 3142 },
+    { id: "3", name: "Music", type: "Official", members: 289, messages: 2856 },
+    { id: "4", name: "My Cool Room", type: "User", members: 12, messages: 234 },
+    { id: "5", name: "Gaming Hub", type: "User", members: 45, messages: 567 },
+    { id: "6", name: "Design Talk", type: "User", members: 23, messages: 189 },
+  ];
+
   // 过滤用户
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(userSearch.toLowerCase())
   );
+
+  // 过滤房间
+  const filteredRooms = allRooms.filter(room =>
+    room.name.toLowerCase().includes(roomSearch.toLowerCase())
+  );
+
+  // 创建房间
+  const handleCreateRoom = () => {
+    if (!newRoomName.trim()) {
+      alert('❌ 房间名称不能为空');
+      return;
+    }
+    alert(`✅ 房间 "${newRoomName}" 已创建（${newRoomType}）`);
+    setNewRoomName("");
+    setShowCreateRoom(false);
+  };
+
+  // 删除房间
+  const handleDeleteRoom = (roomId: string, roomName: string) => {
+    if (window.confirm(`确定要删除房间 "${roomName}" 吗？`)) {
+      alert(`✅ 房间已删除`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0C1424] text-zinc-100 relative overflow-hidden">
@@ -158,6 +200,7 @@ export default function AdminDashboard() {
             <NavItem icon={<ShieldCheck className="h-4 w-4"/>} label="Moderation" active={section==='moderation'} collapsed={collapsed} onClick={()=>setSection('moderation')} />
             <NavItem icon={<BarChart3 className="h-4 w-4"/>} label="Analytics" active={section==='analytics'} collapsed={collapsed} onClick={()=>setSection('analytics')} />
             <NavItem icon={<Settings className="h-4 w-4"/>} label="Settings" active={section==='settings'} collapsed={collapsed} onClick={()=>setSection('settings')} />
+            <NavItem icon={<Zap className="h-4 w-4"/>} label="SEO Tools" active={section==='seo'} collapsed={collapsed} onClick={()=>setSection('seo')} />
           </div>
         </aside>
 
@@ -246,27 +289,95 @@ export default function AdminDashboard() {
               <>
                 <h1 className="text-3xl font-extrabold tracking-tight" style={{ background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Rooms</h1>
                 <p className="text-zinc-400 mt-1">Manage chat rooms and channels</p>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
-                  {[
-                    { name: "General Chat", type: "Official", members: 1543, messages: 5234 },
-                    { name: "Photography", type: "Official", members: 342, messages: 3142 },
-                    { name: "Music", type: "Official", members: 289, messages: 2856 },
-                    { name: "My Cool Room", type: "User", members: 12, messages: 234 },
-                  ].map((room, idx) => (
-                    <Card key={idx}>
+                <div className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Room Management</CardTitle>
+                        <Button onClick={() => setShowCreateRoom(true)}>Create Room</Button>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-3 py-2">
+                        <Search className="h-4 w-4 text-zinc-400" />
+                        <input
+                          type="text"
+                          placeholder="Search rooms by name…"
+                          value={roomSearch}
+                          onChange={(e) => setRoomSearch(e.target.value)}
+                          className="bg-transparent outline-none text-sm w-full text-zinc-100"
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {filteredRooms.length > 0 ? (
+                          filteredRooms.map((room, idx) => (
+                            <div key={room.id} className="flex justify-between items-center p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                              <div>
+                                <p className="font-medium">{room.name}</p>
+                                <p className="text-xs text-white/60">Type: {room.type} • Members: {room.members} • Messages: {room.messages}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  room.type === "Official"
+                                    ? "bg-blue-500/20 text-blue-300"
+                                    : "bg-purple-500/20 text-purple-300"
+                                }`}>
+                                  {room.type}
+                                </span>
+                                <button className="text-xs px-2 py-1 rounded bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition" onClick={() => alert(`Edit room: ${room.name}`)}>
+                                  Edit
+                                </button>
+                                <button className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition" onClick={() => handleDeleteRoom(room.id, room.name)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-6 text-zinc-400">
+                            No rooms found matching "{roomSearch}"
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {showCreateRoom && (
+                  <div className="mt-6">
+                    <Card>
                       <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          <span>{room.name}</span>
-                          <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">{room.type}</span>
-                        </CardTitle>
+                        <CardTitle>Create New Room</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm">👥 Members: {room.members}</p>
-                        <p className="text-sm">💬 Messages: {room.messages}</p>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1">Room Name</label>
+                            <input
+                              type="text"
+                              value={newRoomName}
+                              onChange={(e) => setNewRoomName(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-white focus:border-white/30 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1">Room Type</label>
+                            <select
+                              value={newRoomType}
+                              onChange={(e) => setNewRoomType(e.target.value as "Official" | "User")}
+                              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-white focus:border-white/30 outline-none cursor-pointer"
+                              style={{ colorScheme: 'dark' }}
+                            >
+                              <option value="Official" style={{ color: 'white', backgroundColor: '#1a1f35' }}>Official</option>
+                              <option value="User" style={{ color: 'white', backgroundColor: '#1a1f35' }}>User</option>
+                            </select>
+                          </div>
+                          <Button onClick={handleCreateRoom}>Create Room</Button>
+                        </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -304,11 +415,11 @@ export default function AdminDashboard() {
             {section === 'analytics' && (
               <>
                 <h1 className="text-3xl font-extrabold tracking-tight" style={{ background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Analytics</h1>
-                <p className="text-zinc-400 mt-1">Activity and engagement metrics</p>
+                <p className="text-zinc-400 mt-1">Activity and engagement metrics {metricsConnected && '🟢'}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <Stat title="Online now" value="32" />
-                  <Stat title="Messages (24h)" value="5,432" />
-                  <Stat title="DAU" value="128" />
+                  <Stat title="Online now" value={String(liveMetrics?.online ?? 32)} />
+                  <Stat title="Messages (24h)" value={String(liveMetrics?.msg24h ?? 5432)} />
+                  <Stat title="DAU" value={String(liveMetrics?.dau ?? 128)} />
                 </div>
                 <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <Card>
@@ -316,7 +427,7 @@ export default function AdminDashboard() {
                     <CardContent>
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={msgSeries} margin={{ top: 10, right: 12, bottom: 0, left: -6 }}>
+                          <LineChart data={liveMetrics?.points ?? msgSeries} margin={{ top: 10, right: 12, bottom: 0, left: -6 }}>
                             <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
                             <XAxis dataKey="t" tick={{ fill: "#9CA3AF", fontSize: 12 }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.08)" }} />
                             <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.08)" }} />
@@ -370,6 +481,106 @@ export default function AdminDashboard() {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
+              </>
+            )}
+
+            {section === 'seo' && (
+              <>
+                <h1 className="text-3xl font-extrabold tracking-tight" style={{ background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>🔍 SEO Tools</h1>
+                <p className="text-zinc-400 mt-1">Manage SEO metadata, robots.txt & sitemap</p>
+                
+                {/* 基础 SEO 卡片 */}
+                <div className="mt-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl p-6">
+                  <h2 className="text-lg font-semibold mb-4">基础信息</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">页面标题 (Title)</label>
+                      <input
+                        type="text"
+                        defaultValue="ChatSphere — Real-time Social Chat Community"
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">描述 (Meta Description)</label>
+                      <textarea
+                        defaultValue="A clean, respectful place to talk. Start rooms or DMs instantly."
+                        className="w-full min-h-[90px] px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">关键词 (Keywords)</label>
+                      <input
+                        type="text"
+                        defaultValue="chat, realtime, community, chatsphere"
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 社交媒体卡片 */}
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl p-6">
+                  <h2 className="text-lg font-semibold mb-4">Social & Open Graph</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">规范 URL (Canonical Base)</label>
+                      <input
+                        type="text"
+                        defaultValue="https://chatsphere.app"
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Open Graph 图像 URL</label>
+                      <input
+                        type="text"
+                        defaultValue="https://chatsphere.app/og.jpg"
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                      />
+                      <p className="text-xs text-zinc-500 mt-1">用于分享到 Facebook、LinkedIn 等平台</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Twitter Card 类型</label>
+                      <select className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none cursor-pointer" style={{ colorScheme: 'dark' }}>
+                        <option value="summary" style={{ color: 'white', backgroundColor: '#1a1f35' }}>summary (小卡片)</option>
+                        <option value="summary_large_image" style={{ color: 'white', backgroundColor: '#1a1f35' }} selected>summary_large_image (大图)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Robots.txt 编辑器 */}
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl p-6">
+                  <h2 className="text-lg font-semibold mb-4">Robots.txt</h2>
+                  <div className="space-y-2">
+                    <textarea
+                      defaultValue="User-agent: *\nDisallow: /admin\nSitemap: https://chatsphere.app/sitemap.xml"
+                      className="w-full min-h-[160px] px-4 py-3 rounded-xl bg-black/20 text-white border border-white/10 focus:border-white/30 transition-all outline-none resize-none font-mono text-sm"
+                    />
+                    <p className="text-xs text-zinc-500">搜索引擎爬虫的抓取规则</p>
+                  </div>
+                </div>
+
+                {/* 操作按钮 */}
+                <div className="mt-4 flex gap-3 flex-wrap">
+                  <button className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg">
+                    💾 保存配置
+                  </button>
+                  <button className="px-6 py-3 rounded-xl font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all">
+                    🗺️ 重新生成 Sitemap
+                  </button>
+                </div>
+
+                {/* 预览卡片 */}
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl p-6">
+                  <h2 className="text-lg font-semibold mb-4">📱 预览 (Google Search)</h2>
+                  <div className="bg-white text-black p-4 rounded-lg space-y-1">
+                    <div className="text-sm text-blue-600 font-semibold">https://chatsphere.app</div>
+                    <div className="text-xl font-semibold text-black">ChatSphere — Real-time Social Chat Community</div>
+                    <div className="text-sm text-gray-700">A clean, respectful place to talk. Start rooms or DMs instantly.</div>
+                  </div>
                 </div>
               </>
             )}
