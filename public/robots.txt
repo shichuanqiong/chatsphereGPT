@@ -1,0 +1,39 @@
+User-agent: *
+Allow: /
+Allow: /r/
+Allow: /rooms
+Allow: /dm
+Allow: /terms
+Allow: /privacy
+Allow: /blog
+Allow: /post
+
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /*.js$
+Disallow: /*.css$
+Disallow: /*?*
+Disallow: /node_modules/
+
+# Crawl delay
+Crawl-delay: 1
+
+# Request rate (requests per 10 seconds)
+Request-rate: 1/10s
+
+# Sitemap
+Sitemap: https://chatsphere.live/sitemap.xml
+
+# Google bot specific rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Bing bot specific rules
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# AdsBot specific rules
+User-agent: AdsBot-Google
+Allow: /

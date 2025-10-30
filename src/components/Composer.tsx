@@ -4,6 +4,11 @@ import { ref as dbRef, push, serverTimestamp, runTransaction, set, update, get }
 import { auth, db } from '../firebase';
 import { useToast } from './Toast';
 import { canSendTo } from '../lib/social';
+import { 
+  checkRateLimit, 
+  recordMessage, 
+  getSlowModeFromSettings 
+} from '../utils/rateLimiter';
 
 type Target = { roomId?: string; dmId?: string };
 
@@ -64,10 +69,43 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
 
   const short = (s: string) => (s.length > 80 ? s.slice(0, 77) + '…' : s);
 
+  // 获取 Slow Mode 设置
+  const getSlowMode = () => {
+    try {
+      const settings = localStorage.getItem('system-settings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        return parsed.slowMode || 0;
+      }
+    } catch (error) {
+      console.error('Failed to get slow mode:', error);
+    }
+    return 0;
+  };
+
   const sendRecord = async (content: string) => {
     const uid = getUid();
     if (!uid) { show('Session expired. Please re-login.', 'warning'); return; }
     const nickname = getNick();
+
+    // 只在 Room 中应用速率限制，DM 不受影响
+    if (target.roomId) {
+      const slowModeSeconds = getSlowMode();
+      
+      // 检查速率限制（包括基础 slow mode 和 spam mode）
+      const rateLimitCheck = checkRateLimit(uid, target.roomId, slowModeSeconds);
+      if (!rateLimitCheck.canSend) {
+        show(rateLimitCheck.reason || 'Cannot send message', 'warning');
+        return;
+      }
+      
+      // 检查 spam 行为（3 秒内发 3 条自动进入 30 秒防护）
+      const spamCheck = recordMessage(uid, target.roomId);
+      if (spamCheck.triggered) {
+        show(spamCheck.reason || 'Too many messages', 'error');
+        return;
+      }
+    }
 
     const isGifUrl = /^https?:\/\/.+\.(gif)$/i.test(content.trim()) || /\/gif/i.test(content);
     const payload: any = {
