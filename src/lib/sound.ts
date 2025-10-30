@@ -1,9 +1,27 @@
 // src/lib/sound.ts
 type Source = { src: string; type: string };
 
-const BASE = (import.meta as any).env?.BASE_URL || '/';
+// 在生产环境中使用正确的 base 路径
+const BASE = typeof window !== 'undefined' && window.location.pathname.includes('/chatsphereGPT/')
+  ? '/chatsphereGPT/'
+  : (import.meta as any).env?.BASE_URL || '/';
 
-const url = (p: string) => new URL(p, BASE).toString();
+const url = (p: string) => {
+  // 处理绝对路径
+  if (p.startsWith('/')) {
+    p = p.slice(1);
+  }
+  
+  // 如果已经是完整 URL（http/https），直接返回
+  if (p.startsWith('http')) {
+    return p;
+  }
+  
+  // 构建完整 URL
+  const fullPath = BASE + p;
+  console.log('[Sound] Constructed URL:', fullPath); // 调试日志
+  return fullPath;
+};
 
 export const SOURCES: Record<string, Source[]> = {
   ding: [
