@@ -13,6 +13,10 @@ import {
   LogOut,
   Zap,
   RefreshCw,
+  BookOpen,
+  Trash2,
+  Edit2,
+  Plus,
 } from "lucide-react";
 import {
   LineChart,
@@ -25,6 +29,8 @@ import {
 } from "recharts";
 import { useAnalyticsStream, useAdminUsers, useAdminRooms, useAdminReports } from "@/hooks/useAnalyticsStream";
 import AdminAPI from "@/lib/api";
+import { db } from "@/firebase";
+import { ref, onValue, push, set, remove, update } from "firebase/database";
 
 // ChatSphere — Admin Dashboard v0.2
 // ▸ 深蓝 + 青紫色系  ▸ 折叠侧栏  ▸ 顶部导航  ▸ 渐变标题  ▸ Recharts 折线图
@@ -162,6 +168,17 @@ export default function AdminDashboard() {
   // 用户筛选状态
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
 
+  // Blog 管理状态
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [blogSearch, setBlogSearch] = useState("");
+  const [showCreateBlog, setShowCreateBlog] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<any>(null);
+  const [newBlogTitle, setNewBlogTitle] = useState("");
+  const [newBlogSlug, setNewBlogSlug] = useState("");
+  const [newBlogExcerpt, setNewBlogExcerpt] = useState("");
+  const [newBlogContent, setNewBlogContent] = useState("");
+  const [blogSaving, setBlogSaving] = useState(false);
+
   // 每次 section 变更时，保存到 localStorage
   useEffect(() => {
     try {
@@ -170,6 +187,19 @@ export default function AdminDashboard() {
       console.error('Failed to save admin-section:', error);
     }
   }, [section]);
+
+  // 加载 Blogs 数据
+  useEffect(() => {
+    if (!db) return;
+    const postsRef = ref(db, '/posts');
+    const unsubscribe = onValue(postsRef, (snap) => {
+      const val = snap.val() || {};
+      const arr = Object.entries(val).map(([id, val]: any) => ({ id, ...val }));
+      arr.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setBlogs(arr);
+    });
+    return unsubscribe;
+  }, []);
 
   // 实时分析数据
   const { data: liveMetrics, connected: metricsConnected } = useAnalyticsStream();
@@ -327,6 +357,77 @@ export default function AdminDashboard() {
     }
   };
 
+  // Blog 管理函数
+  const handleSaveBlog = async () => {
+    if (!newBlogTitle.trim() || !newBlogSlug.trim() || !newBlogContent.trim()) {
+      alert('❌ 标题、URL 别名和内容不能为空');
+      return;
+    }
+    
+    setBlogSaving(true);
+    try {
+      if (editingBlog) {
+        // 编辑现有博客
+        await update(ref(db, `/posts/${editingBlog.id}`), {
+          title: newBlogTitle,
+          slug: newBlogSlug,
+          excerpt: newBlogExcerpt,
+          content: newBlogContent,
+        });
+        alert('✅ 博客已更新');
+        setEditingBlog(null);
+      } else {
+        // 创建新博客
+        const newPostRef = push(ref(db, 'posts'));
+        await set(newPostRef, {
+          title: newBlogTitle,
+          slug: newBlogSlug,
+          excerpt: newBlogExcerpt,
+          content: newBlogContent,
+          createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }
+        });
+        alert('✅ 博客已创建');
+      }
+      setNewBlogTitle("");
+      setNewBlogSlug("");
+      setNewBlogExcerpt("");
+      setNewBlogContent("");
+      setShowCreateBlog(false);
+    } catch (error: any) {
+      alert(`❌ 保存失败: ${error.message}`);
+    } finally {
+      setBlogSaving(false);
+    }
+  };
+
+  const handleDeleteBlog = async (blogId: string, blogTitle: string) => {
+    if (!window.confirm(`确定要删除博客 "${blogTitle}" 吗？`)) return;
+    try {
+      await remove(ref(db, `/posts/${blogId}`));
+      alert('✅ 博客已删除');
+    } catch (error: any) {
+      alert(`❌ 删除失败: ${error.message}`);
+    }
+  };
+
+  const handleEditBlog = (blog: any) => {
+    setEditingBlog(blog);
+    setNewBlogTitle(blog.title);
+    setNewBlogSlug(blog.slug);
+    setNewBlogExcerpt(blog.excerpt);
+    setNewBlogContent(blog.content);
+    setShowCreateBlog(true);
+  };
+
+  const handleCancelBlog = () => {
+    setShowCreateBlog(false);
+    setEditingBlog(null);
+    setNewBlogTitle("");
+    setNewBlogSlug("");
+    setNewBlogExcerpt("");
+    setNewBlogContent("");
+  };
+
   return (
     <div className="min-h-screen bg-[#0C1424] text-zinc-100 relative overflow-hidden">
       {/* 背景网格/光影 */}
@@ -373,6 +474,7 @@ export default function AdminDashboard() {
             <NavItem icon={<ShieldCheck className="h-4 w-4"/>} label="Moderation" active={section==='moderation'} collapsed={collapsed} onClick={()=>setSection('moderation')} />
             <NavItem icon={<BarChart3 className="h-4 w-4"/>} label="Analytics" active={section==='analytics'} collapsed={collapsed} onClick={()=>setSection('analytics')} />
             <NavItem icon={<Settings className="h-4 w-4"/>} label="Settings" active={section==='settings'} collapsed={collapsed} onClick={()=>setSection('settings')} />
+            <NavItem icon={<BookOpen className="h-4 w-4"/>} label="Blog" active={section==='blog'} collapsed={collapsed} onClick={()=>setSection('blog')} />
             <NavItem icon={<Zap className="h-4 w-4"/>} label="SEO Tools" active={section==='seo'} collapsed={collapsed} onClick={()=>setSection('seo')} />
           </div>
         </aside>
@@ -885,6 +987,137 @@ export default function AdminDashboard() {
                     <div className="text-xl font-semibold text-black">{seoTitle}</div>
                     <div className="text-sm text-gray-700">{seoDescription}</div>
                   </div>
+                </div>
+              </>
+            )}
+
+            {section === 'blog' && (
+              <>
+                <h1 className="text-3xl font-extrabold tracking-tight" style={{ background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Blog Management</h1>
+                <p className="text-zinc-400 mt-1">Create, edit, and manage blog posts</p>
+
+                {/* 创建/编辑博客表单 */}
+                {showCreateBlog && (
+                  <Card className="mt-6 p-6">
+                    <h2 className="text-lg font-semibold mb-4">{editingBlog ? '编辑博客' : '创建新博客'}</h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">标题</label>
+                        <input
+                          type="text"
+                          value={newBlogTitle}
+                          onChange={(e) => setNewBlogTitle(e.target.value)}
+                          placeholder="博客标题"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">URL 别名 (Slug)</label>
+                        <input
+                          type="text"
+                          value={newBlogSlug}
+                          onChange={(e) => setNewBlogSlug(e.target.value)}
+                          placeholder="url-slug (例: welcome-to-chatsphere)"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">摘要</label>
+                        <input
+                          type="text"
+                          value={newBlogExcerpt}
+                          onChange={(e) => setNewBlogExcerpt(e.target.value)}
+                          placeholder="简短的摘要 (可选)"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">内容</label>
+                        <textarea
+                          value={newBlogContent}
+                          onChange={(e) => setNewBlogContent(e.target.value)}
+                          placeholder="博客内容 (支持 Markdown)"
+                          className="w-full min-h-[300px] px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none resize-none font-mono text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleSaveBlog}
+                          disabled={blogSaving}
+                          className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50"
+                        >
+                          {blogSaving ? '保存中...' : editingBlog ? '💾 更新博客' : '✨ 创建博客'}
+                        </button>
+                        <button
+                          onClick={handleCancelBlog}
+                          className="px-6 py-3 rounded-xl font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* 博客列表 */}
+                <div className="mt-6 flex gap-3 items-center">
+                  <button
+                    onClick={() => setShowCreateBlog(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all text-white font-semibold"
+                  >
+                    <Plus className="h-4 w-4" /> 新建博客
+                  </button>
+                  <div className="flex-1 flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                    <Search className="h-4 w-4 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={blogSearch}
+                      onChange={(e) => setBlogSearch(e.target.value)}
+                      placeholder="搜索博客..."
+                      className="bg-transparent outline-none text-sm w-full text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {blogs
+                    .filter(b => b.title.toLowerCase().includes(blogSearch.toLowerCase()))
+                    .map((blog) => (
+                      <Card key={blog.id} className="p-4 hover:bg-white/10 transition-all">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-white mb-1">{blog.title}</h3>
+                            <p className="text-sm text-zinc-400 mb-2">{blog.excerpt || blog.content.substring(0, 100)}</p>
+                            <div className="flex gap-4 text-xs text-zinc-500">
+                              <span>📅 {new Date((blog.createdAt?.seconds || 0) * 1000).toLocaleDateString()}</span>
+                              <span>🔗 /{blog.slug}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 ml-4 flex-shrink-0">
+                            <button
+                              onClick={() => handleEditBlog(blog)}
+                              className="p-2 rounded-lg bg-white/10 hover:bg-blue-500/30 text-blue-300 hover:text-blue-200 transition-all"
+                              title="编辑"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBlog(blog.id, blog.title)}
+                              className="p-2 rounded-lg bg-white/10 hover:bg-red-500/30 text-red-300 hover:text-red-200 transition-all"
+                              title="删除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+
+                  {blogs.filter(b => b.title.toLowerCase().includes(blogSearch.toLowerCase())).length === 0 && (
+                    <div className="text-center py-12 text-zinc-400">
+                      <p>暂无博客文章</p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
