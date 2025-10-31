@@ -285,33 +285,6 @@ export default function Home() {
     return unsub;
   }, [uid]);
 
-  // Step 4b: 为在线用户动态加载 profiles（避免全局订阅污染，但保证在线用户信息完整）
-  useEffect(() => {
-    const onlineUserIds = Object.keys(presence).filter(
-      k => presence[k]?.state === 'online' && k !== uid
-    );
-
-    if (onlineUserIds.length === 0) return;
-
-    // 批量加载这些用户的 profile
-    const unsubscribes: Array<() => void> = [];
-    
-    onlineUserIds.forEach(userId => {
-      // 只订阅还没有缓存的用户
-      if (!profiles[userId]) {
-        const unsub = onValue(ref(db, `/profiles/${userId}`), (snap) => {
-          const profileData = snap.val();
-          if (profileData) {
-            setProfiles(prev => ({ ...prev, [userId]: profileData }));
-          }
-        });
-        unsubscribes.push(unsub);
-      }
-    });
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [presence, uid, profiles]);
-
   // 房主在线状态绑定
   useEffect(() => {
     if (!uid) return;
@@ -555,6 +528,45 @@ export default function Home() {
 
   // 朋友列表
   const [friends, setFriends] = useState<Record<string, true>>({});
+  
+  const subscribedUsersRef = useRef<Set<string>>(new Set());
+
+  // 清理已订阅用户列表（当切换账号时）
+  useEffect(() => {
+    subscribedUsersRef.current.clear();
+  }, [uid]);
+
+  // Step 4b: 为在线用户和朋友加载 profiles（避免全局订阅污染，但保证用户信息完整）
+  useEffect(() => {
+    const onlineUserIds = Object.keys(presence).filter(
+      k => presence[k]?.state === 'online' && k !== uid
+    );
+    const friendIds = Object.keys(friends);
+    
+    // 合并要加载的用户 ID（去重）
+    const userIdsToLoad = Array.from(new Set([...onlineUserIds, ...friendIds]));
+
+    if (userIdsToLoad.length === 0) return;
+
+    // 批量加载这些用户的 profile
+    const unsubscribes: Array<() => void> = [];
+    
+    userIdsToLoad.forEach(userId => {
+      // 只订阅还没有缓存的用户（用 ref 追踪，避免重复订阅）
+      if (!subscribedUsersRef.current.has(userId)) {
+        subscribedUsersRef.current.add(userId);
+        const unsub = onValue(ref(db, `/profiles/${userId}`), (snap) => {
+          const profileData = snap.val();
+          if (profileData) {
+            setProfiles(prev => ({ ...prev, [userId]: profileData }));
+          }
+        });
+        unsubscribes.push(unsub);
+      }
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
+  }, [presence, friends, uid]);
   
   // 资料/在线/我的线程/房间元数据/朋友/屏蔽/静音
   useEffect(() => {
