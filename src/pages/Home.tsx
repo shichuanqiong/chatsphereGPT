@@ -270,6 +270,21 @@ export default function Home() {
     };
   }, []);
 
+  // Step 4: 严格按 uid 监听当前用户的 profile，避免跨用户污染
+  useEffect(() => {
+    if (!uid) return;
+    
+    const unsub = onValue(ref(db, `/profiles/${uid}`), (snap) => {
+      const profileData = snap.val();
+      if (profileData) {
+        // 仅更新当前用户的 profile，不污染其他用户数据
+        setProfiles(prev => ({ ...prev, [uid]: profileData }));
+      }
+    });
+    
+    return unsub;
+  }, [uid]);
+
   // 房主在线状态绑定
   useEffect(() => {
     if (!uid) return;
@@ -517,7 +532,9 @@ export default function Home() {
   // 资料/在线/我的线程/房间元数据/朋友/屏蔽/静音
   useEffect(() => {
     const off1 = onValue(ref(db, '/presence'), (s) => setPresence(s.val() || {}));
-    const off2 = onValue(ref(db, '/profiles'), (s) => setProfiles(s.val() || {}));
+    // Step 4修复: 删除全局 /profiles 订阅，改由专门的 useEffect 按 uid 监听
+    // const off2 = onValue(ref(db, '/profiles'), (s) => setProfiles(s.val() || {}));
+    const off2 = () => {}; // 不再订阅全局 profiles
     const off3 = uid ? () => {} : () => {}; // DM threads now handled by useInbox hook
     const off4 = uid ? onValue(ref(db, `/roomsMeta/${uid}`), (s) => setRoomsMeta(s.val() || {})) : () => {};
     const off5 = uid ? onValue(ref(db, `/friends/${uid}`), (s) => setFriends(s.val() || {})) : () => {};
@@ -915,6 +932,21 @@ export default function Home() {
     cb();
   };
 
+  // Step 6: 登出时清理缓存
+  const handleLogout = async () => {
+    // 清理所有 cs.profile.* 缓存
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('cs.profile.'))
+      .forEach(k => localStorage.removeItem(k));
+    
+    // 清理其他全局缓存
+    try { localStorage.removeItem('nickname'); } catch {}
+    try { localStorage.removeItem('guestName'); } catch {}
+    
+    // 执行登出
+    await signOut(auth);
+  };
+
   const selectRoom = async (rid: string) => {
     setDmId('');
     setDmPeer(null);
@@ -991,7 +1023,7 @@ export default function Home() {
         unreadTotal={inboxUnreadCount}
         onToggleInbox={() => {}}
         currentProfile={myProfile ? { ...myProfile, uid } : undefined}
-        onLogout={() => signOut(auth)}
+        onLogout={handleLogout}
         inboxContent={
           <InboxPopover
             inboxItems={inboxItems}
