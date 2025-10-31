@@ -599,7 +599,7 @@ export default function Login() {
             <span className="mx-1 text-white/30">·</span>
             <span className="hover:text-white transition-colors cursor-pointer">Contact Us</span>
             <span className="mx-1 text-white/30">·</span>
-            <a className="hover:text-white transition-colors" href="/blog">Blog</a>
+            <a className="hover:text-white transition-colors" href="/chatsphereGPT/#/blog">Blog</a>
           </div>
           <div className="text-xs text-white/45">Background by Unsplash & Picsum</div>
           <div className="text-xs text-white/40">© 2025 ChatSphere</div>
