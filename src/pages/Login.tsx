@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   fetchSignInMethodsForEmail,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { ref, set, serverTimestamp, runTransaction, remove } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
@@ -330,7 +331,7 @@ export default function Login() {
           const reset = confirm('Send a password reset email to this address?');
           if (reset) {
             try {
-              // await sendPasswordResetEmail(auth, email); // This line was removed
+              await sendPasswordResetEmail(auth, email);
               show('Password reset email sent. Please check your inbox.', 'success', 1400);
             } catch (err) {
               show('Failed to send reset email.', 'error', 1400);
