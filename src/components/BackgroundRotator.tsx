@@ -12,27 +12,35 @@ type Props = {
 };
 
 export default function BackgroundRotator({
-  intervalMs = 25000,
+  intervalMs = 15000,
   darken = 0.45,
   contrast = 1.05,
   brightness = 0.95,
 }: Props) {
   const timer = useRef<number | null>(null);
   const [url, setUrl] = useState<string>('');
+  const nextUrlRef = useRef<string>('');
 
   useEffect(() => {
     let mounted = true;
 
-    const swap = async () => {
-      const next = nextBgUrl();
-      try {
-        await preload(next);
-      } catch {}
-      if (mounted) setUrl(next);
+    const swap = () => {
+      // ★ 立即显示下一张（如果已预加载）或生成新的
+      const displayUrl = nextUrlRef.current || nextBgUrl();
+      if (mounted) setUrl(displayUrl);
+
+      // ★ 后台异步预加载再下一张（不 await，不阻塞）
+      const futureUrl = nextBgUrl();
+      preload(futureUrl).catch(() => {
+        // 预加载失败也不影响，下次切换时会重试
+      });
+      nextUrlRef.current = futureUrl;
     };
 
+    // ★ 挂载时立即执行一次（秒速显示第一张）
     swap();
 
+    // ★ 每 15 秒切换一次
     timer.current = window.setInterval(swap, intervalMs);
 
     return () => {
