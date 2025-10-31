@@ -8,7 +8,6 @@ import {
 } from 'firebase/database';
 import { auth, db, presenceOnline, startPresenceHeartbeat } from '../firebase';
 import Composer, { type ComposerRef } from '../components/Composer';
-import BackgroundRotator from '../components/BackgroundRotator';
 import Header from '../components/Header';
 import { useSoundToggle } from '../hooks/useSoundToggle';
 import { Sound } from '../lib/sound';
@@ -1070,9 +1069,6 @@ export default function Home() {
 
   return (
     <div className="h-screen w-full text-white relative overflow-hidden flex flex-col">
-      <BackgroundRotator />
-
-      {/* 顶部横条 */}
       <Header
         unreadTotal={inboxUnreadCount}
         onToggleInbox={() => {}}

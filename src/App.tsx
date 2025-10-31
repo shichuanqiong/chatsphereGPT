@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
 import { CurrentRoomProvider } from './state/currentRoom';
+import BackgroundRotator from './components/BackgroundRotator';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Blog from './pages/Blog';
@@ -13,6 +14,7 @@ export default function App(){
   return(
     <AuthProvider>
       <CurrentRoomProvider>
+        <BackgroundRotator />
         <HashRouter>
           <Routes>
             <Route path='/' element={<Login/>}/>

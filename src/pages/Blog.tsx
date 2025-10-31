@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { ref, onValue } from 'firebase/database';
-import BackgroundRotator from '../components/BackgroundRotator';
 import GlassCard from '../components/GlassCard';
 import { Link } from 'react-router-dom';
 
@@ -20,7 +19,6 @@ export default function Blog() {
 
   return (
     <main className="min-h-screen text-white">
-      <BackgroundRotator />
       <div className="max-w-3xl mx-auto pt-20 px-4">
         <GlassCard className="p-6">
           <h1 className="text-3xl font-bold">Blog</h1>
