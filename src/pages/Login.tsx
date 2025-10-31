@@ -73,6 +73,7 @@ export default function Login() {
     'Singapore',
     'Hong Kong',
     'Taiwan',
+    'China',
     'Japan',
     'South Korea',
     'Germany',
