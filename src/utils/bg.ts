@@ -14,7 +14,27 @@ const TOPICS = [
   'night', 'dark', 'landscape', 'nature', 'travel'
 ];
 
-// 完全用 Picsum 固定 ID（12 张黑白图，永不 CORS 失败）
+// Unsplash query 组合（预定义，不用 seed 参数）
+const UNSPLASH_QUERIES = [
+  'city,black,white,monochrome,grayscale',
+  'mountain,landscape,black,white,monochrome',
+  'forest,nature,black,white,grayscale',
+  'ocean,sea,black,white,monochrome',
+  'street,urban,black,white,grayscale',
+  'architecture,building,black,white,monochrome',
+  'night,dark,black,white,grayscale',
+  'abstract,minimal,black,white,monochrome',
+  'river,water,black,white,grayscale',
+  'sky,cloud,black,white,monochrome',
+  'sunset,sunrise,black,white,grayscale',
+  'desert,sand,black,white,monochrome',
+  'valley,landscape,black,white,grayscale',
+  'coast,beach,black,white,monochrome',
+  'aerial,landscape,black,white,grayscale',
+  'snow,winter,black,white,monochrome',
+];
+
+// Picsum 固定 ID（20 张黑白图，扩大备用库）
 export const PICSUM_FALLBACKS = [
   'https://picsum.photos/id/1011/1920/1080?grayscale',
   'https://picsum.photos/id/1015/1920/1080?grayscale',
@@ -28,23 +48,45 @@ export const PICSUM_FALLBACKS = [
   'https://picsum.photos/id/1074/1920/1080?grayscale',
   'https://picsum.photos/id/1084/1920/1080?grayscale',
   'https://picsum.photos/id/1088/1920/1080?grayscale',
+  'https://picsum.photos/id/1100/1920/1080?grayscale',
+  'https://picsum.photos/id/1101/1920/1080?grayscale',
+  'https://picsum.photos/id/1102/1920/1080?grayscale',
+  'https://picsum.photos/id/1103/1920/1080?grayscale',
+  'https://picsum.photos/id/1104/1920/1080?grayscale',
+  'https://picsum.photos/id/1105/1920/1080?grayscale',
+  'https://picsum.photos/id/1106/1920/1080?grayscale',
+  'https://picsum.photos/id/1107/1920/1080?grayscale',
 ];
 
 const recent = new Set<string>();
-const MAX_RECENT = 24;  // 增加去重窗口以应对只用 Picsum
+const MAX_RECENT = 32;  // 增加去重窗口以支持更多候选
+
+let queryIndex = 0;  // 轮流使用不同的 Unsplash query
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-// 直接返回固定 ID 的 Picsum 图片，避免 seed 导致的 302 重定向
+// Unsplash 用预定义的 query（不用 seed，避免 302 重定向）
+function makeUnsplash(): string {
+  const query = UNSPLASH_QUERIES[queryIndex % UNSPLASH_QUERIES.length];
+  queryIndex++;
+  const q = encodeURIComponent(query);
+  return `https://source.unsplash.com/random/1920x1080/?${q}`;
+}
+
+// Picsum 直接用固定 ID
 function makePicsum(): string {
   return pick(PICSUM_FALLBACKS);
 }
 
 export function nextCandidates(n = 2): string[] {
-  // 生成 Picsum 固定 ID 候选（不用 seed，直接从 PICSUM_FALLBACKS 中随机选）
+  // 混合生成：60% Unsplash，40% Picsum 备用
   const candidates: string[] = [];
   for (let i = 0; i < 3; i++) {
-    candidates.push(makePicsum());
+    if (Math.random() < 0.6) {
+      candidates.push(makeUnsplash());
+    } else {
+      candidates.push(makePicsum());
+    }
   }
   
   // 过滤掉 recent 中的 URL 和重复的 URL
@@ -59,7 +101,11 @@ export function nextCandidates(n = 2): string[] {
   for (let attempt = 0; attempt < 5; attempt++) {
     const newCandidates: string[] = [];
     for (let i = 0; i < 3; i++) {
-      newCandidates.push(makePicsum());
+      if (Math.random() < 0.6) {
+        newCandidates.push(makeUnsplash());
+      } else {
+        newCandidates.push(makePicsum());
+      }
     }
     const freshOnes = Array.from(new Set(newCandidates)).filter(u => !recent.has(u));
     
@@ -70,7 +116,7 @@ export function nextCandidates(n = 2): string[] {
   
   // 极端情况：清空 recent 重新开始
   recent.clear();
-  return [makePicsum(), makePicsum()];
+  return [makeUnsplash(), makePicsum()];
 }
 
 export function markRecent(url: string) {
