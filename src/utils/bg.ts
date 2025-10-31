@@ -5,14 +5,23 @@ const TOPICS = [
   'fog', 'street', 'aerial', 'architecture', 'night', 'river', 'valley'
 ];
 
+// 获取基础路径（GitHub Pages 子路径支持）
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+
+// 构造完整 URL（处理 GitHub Pages /chatsphereGPT/ 路径）
+const buildUrl = (path: string): string => {
+  if (path.startsWith('http')) return path;
+  return BASE_URL + path.replace(/^\//, '');
+};
+
 // 本地备用（永不失败）
 export const LOCAL_FALLBACKS = [
-  '/fallbacks/bw1.svg',
-  '/fallbacks/bw2.svg',
-  '/fallbacks/bw3.svg',
-  '/fallbacks/bw4.svg',
-  '/fallbacks/bw5.svg',
-  '/fallbacks/bw6.svg',
+  buildUrl('fallbacks/bw1.svg'),
+  buildUrl('fallbacks/bw2.svg'),
+  buildUrl('fallbacks/bw3.svg'),
+  buildUrl('fallbacks/bw4.svg'),
+  buildUrl('fallbacks/bw5.svg'),
+  buildUrl('fallbacks/bw6.svg'),
 ];
 
 const recent = new Set<string>();
