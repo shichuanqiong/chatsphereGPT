@@ -414,6 +414,25 @@ export default function Login() {
                   Login
                 </button>
 
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const resetEmail = prompt('Enter your email address for password reset:');
+                      if (resetEmail) {
+                        sendPasswordResetEmail(auth, resetEmail).then(() => {
+                          show('Password reset email sent. Please check your inbox.', 'success', 2000);
+                        }).catch((err: any) => {
+                          show(`Error: ${err.message || 'Failed to send reset email'}`, 'error', 2000);
+                        });
+                      }
+                    }}
+                    className="text-white/60 hover:text-white text-xs transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
                 <div className="text-center text-white/65 text-sm">
                   <button
                     type="button"
