@@ -1,5 +1,5 @@
 // src/pages/Login.tsx
-import RotatingBWBackground from '../components/RotatingBWBackground';
+import BackgroundRotator from '../components/BackgroundRotator';
 import GlassCard from '../components/GlassCard';
 import { auth, db, presenceOnline } from '../firebase';
 import {
@@ -379,7 +379,7 @@ export default function Login() {
 
   return (
     <main className="min-h-screen flex items-center justify-center text-white">
-      <RotatingBWBackground />
+      <BackgroundRotator />
       <GlassCard className="w-[420px] p-8 animate-fade-in">
         <div className="text-center mb-6">
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-teal-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
