@@ -14,13 +14,20 @@ const TOPICS = [
   'night', 'dark', 'landscape', 'nature', 'travel'
 ];
 
-// v1.08 三层防护：Picsum 固定 ID（永不 404）
+// 方案 A：增加 Picsum 备用图从 5 张到 12 张（更多多样性）
 export const PICSUM_FALLBACKS = [
   'https://picsum.photos/id/1011/1920/1080?grayscale',
   'https://picsum.photos/id/1015/1920/1080?grayscale',
   'https://picsum.photos/id/1021/1920/1080?grayscale',
   'https://picsum.photos/id/1036/1920/1080?grayscale',
   'https://picsum.photos/id/1040/1920/1080?grayscale',
+  'https://picsum.photos/id/1043/1920/1080?grayscale',
+  'https://picsum.photos/id/1051/1920/1080?grayscale',
+  'https://picsum.photos/id/1060/1920/1080?grayscale',
+  'https://picsum.photos/id/1070/1920/1080?grayscale',
+  'https://picsum.photos/id/1074/1920/1080?grayscale',
+  'https://picsum.photos/id/1084/1920/1080?grayscale',
+  'https://picsum.photos/id/1088/1920/1080?grayscale',
 ];
 
 const recent = new Set<string>();
@@ -35,9 +42,11 @@ const cb = () => {
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
+// 方案 B：修复 Unsplash CORS - 优化 URL 格式
 function makeUnsplash(): string {
   const topic = encodeURIComponent(`${pick(TOPICS)}, black and white, monochrome, grayscale`);
-  return `https://source.unsplash.com/random/1920x1080/?${topic}&${cb()}`;
+  // 添加 t 参数作为额外的缓存破坏器，并确保完整的参数
+  return `https://source.unsplash.com/random/1920x1080/?${topic}&t=${cb()}`;
 }
 
 function makePicsum(): string {
