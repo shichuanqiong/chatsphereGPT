@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
  * - 每 20s 直接换一张图（不做预加载/交叉淡入）
  * - 永远有一张 <img> 在屏幕上 → 不会黑屏
  * - 出错时马上切备用图（本地或 picsum 固定 id）
+ * - 添加去重机制，避免短时间内重复
  */
 
 const INTERVAL_MS = 20_000;
@@ -28,17 +29,54 @@ const FALLBACKS = [
   `https://picsum.photos/id/1040/${WIDTH}/${HEIGHT}?grayscale`
 ];
 
+// 追踪最近使用过的查询，避免短时间重复
+const recentQueries = new Set<string>();
+const MAX_RECENT = 8;
+
 function pick(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 简单可靠的在线源（强 sig 防缓存）
+// 强力 cache-buster + 去重
 function randomOnlineUrl() {
-  const isCity = Math.random() < 0.6; // 60% 城市
-  const q = isCity ? pick(CITY) : pick(NATURE);
-  const sig = Math.floor(Math.random() * 1e9);
+  // 1. 强 cache-buster：时间戳 + 长随机数
+  const timestamp = Date.now();
+  const randomPart = Math.random().toString(36).substring(2, 15) + 
+                     Math.random().toString(36).substring(2, 15);
+  const sig = `${timestamp}-${randomPart}`;
+  
+  // 2. 组合多个关键词增加多样性
+  const isCity = Math.random() < 0.6;
+  const keywords = [];
+  
+  // 随机选择 1-3 个关键词组合
+  const keywordSet = isCity ? CITY : NATURE;
+  const count = Math.floor(Math.random() * 3) + 1;
+  for (let i = 0; i < count; i++) {
+    keywords.push(pick(keywordSet));
+  }
+  
+  // 3. 检查是否在最近使用过，避免重复
+  let query = keywords.join(',');
+  while (recentQueries.has(query) && recentQueries.size > 0) {
+    // 如果重复，重新生成
+    for (let i = 0; i < count; i++) {
+      keywords[i] = pick(keywordSet);
+    }
+    query = keywords.join(',');
+  }
+  
+  // 记录此次查询
+  recentQueries.add(query);
+  if (recentQueries.size > MAX_RECENT) {
+    const first = recentQueries.values().next().value;
+    recentQueries.delete(first);
+  }
+  
+  const q = encodeURIComponent(`${query}, black and white, monochrome`);
+  
   // Source Unsplash：简单，稳定，单张直链
-  return `https://source.unsplash.com/random/${WIDTH}x${HEIGHT}/?${q}&sig=${sig}&bw`;
+  return `https://source.unsplash.com/random/${WIDTH}x${HEIGHT}/?${q}&${sig}&bw`;
 }
 
 export default function BackgroundRotator() {
