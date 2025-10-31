@@ -5,6 +5,7 @@ type CreatePayload = {
   name: string;
   visibility: 'public' | 'private';
   icon?: string;
+  creatorName?: string;
 };
 
 export async function createRoomAndEnter(payload: CreatePayload): Promise<string> {
@@ -18,12 +19,11 @@ export async function createRoomAndEnter(payload: CreatePayload): Promise<string
   await set(ref(db, `rooms/${roomId}`), {
     id: roomId,
     name: payload.name,
-    // 兼容：保留公开/私密
     visibility: payload.visibility,
-    // 房间类型：用户创建
     type: 'user',
     icon: payload.icon ?? '💬',
     ownerId: uid,
+    creatorName: payload.creatorName || 'Unknown User',
     createdAt: serverTimestamp(),
     expiresAt,
     status: 'active',

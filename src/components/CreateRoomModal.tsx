@@ -27,7 +27,8 @@ export default function CreateRoomModal({ open, onClose, onCreated }: { open: bo
       const profile = profileSnap.val();
       const creatorName = profile?.nickname || 'Unknown User';
       
-      const roomId = await createRoomAndEnter({ name: name.trim(), visibility, icon });
+      // 修改这行：传递 creatorName
+      const roomId = await createRoomAndEnter({ name: name.trim(), visibility, icon, creatorName });
 
       onClose();
       // 清空表单
