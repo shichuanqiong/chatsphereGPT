@@ -58,7 +58,7 @@ export const PICSUM_FALLBACKS = [
   'https://picsum.photos/id/1107/1920/1080?grayscale',
 ];
 
-// ★ 时间窗口的去重策略（而非固定数量）
+// ★ 时间窗口的去重策略（保证最近 N 分钟内不重复）
 export const NO_REPEAT_MINUTES = 45;
 
 const DEFAULT_INTERVAL_MS = 15000;
@@ -73,6 +73,19 @@ const recentSet = new Set<string>();
 let queryIndex = 0;  // 轮流使用不同的 Unsplash query
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+
+// ★ 单调递增的 Picsum seed（保证源头不重复）
+function nextSeed(): string {
+  try {
+    const k = 'bgSeedCounter';
+    const n = (parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1;
+    localStorage.setItem(k, String(n));
+    return n.toString(36);  // 更短的 seed
+  } catch {
+    // localStorage 不可用时退回时间+随机
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+}
 
 // ★ 组件在挂载时调用，同步轮换间隔以自动调整去重窗口
 export function setIntervalForBg(intervalMs: number) {
@@ -99,7 +112,7 @@ export function remember(u: string) {
     recentSet.delete(oldest);
   }
 
-  console.log(`[BG] remember: added ${u.substring(0, 50)}..., queue size=${recent.length}/${maxRecent}`);
+  console.log(`[BG] remember: added, queue size=${recent.length}/${maxRecent}`);
 }
 
 // Unsplash 用预定义的 query（不用 seed，避免 302 重定向）
@@ -110,55 +123,52 @@ function makeUnsplash(): string {
   return `https://source.unsplash.com/random/1920x1080/?${q}`;
 }
 
-// Picsum 直接用固定 ID
+// Picsum 用单调递增的 seed（保证每次都是新图）
 function makePicsum(): string {
-  return pick(PICSUM_FALLBACKS);
+  const seed = nextSeed();
+  return `https://picsum.photos/seed/${seed}/1920/1080?grayscale`;
 }
 
+// ★ 生成候选 URL（60% Unsplash + 40% Picsum）
 export function nextCandidates(n = 2): string[] {
-  // 混合生成：60% Unsplash，40% Picsum 备用
   const candidates: string[] = [];
+  
+  // 混合生成：60% Unsplash，40% Picsum 备用
   for (let i = 0; i < 3; i++) {
     if (Math.random() < 0.6) {
       candidates.push(makeUnsplash());
     } else {
-      candidates.push(makePicsum());
+      candidates.push(makePicsum());  // 使用单调 seed，保证新图
     }
   }
 
-  // 过滤掉 seen（去重队列中）的 URL 和重复的 URL
-  const uniq = Array.from(new Set(candidates)).filter(u => !seen(u));
+  // 快速去重（移除重复）
+  const uniq = Array.from(new Set(candidates));
 
-  // 如果有未用过的候选，直接返回
+  // 如果有候选，直接返回
   if (uniq.length > 0) {
-    console.log(`[BG] nextCandidates: found ${uniq.length} fresh candidates`);
+    console.log(`[BG] nextCandidates: returning ${uniq.length} candidates`);
     return uniq.slice(0, n);
   }
 
-  // 如果全在去重队列中，生成新候选直到找到不在队列的
-  console.log(`[BG] nextCandidates: all candidates in recent, retrying...`);
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const newCandidates: string[] = [];
-    for (let i = 0; i < 3; i++) {
-      if (Math.random() < 0.6) {
-        newCandidates.push(makeUnsplash());
-      } else {
-        newCandidates.push(makePicsum());
-      }
-    }
-    const freshOnes = Array.from(new Set(newCandidates)).filter(u => !seen(u));
+  // 极端情况（概率很小）：都是重复
+  return [makeUnsplash(), makePicsum()];
+}
 
-    if (freshOnes.length > 0) {
-      console.log(`[BG] nextCandidates: retry ${attempt + 1} successful, found ${freshOnes.length}`);
-      return freshOnes.slice(0, n);
+// ★ 生成一个保证不在 recent 中的 URL（强制新）
+export function nextUniqueUrl(maxTry = 8): string {
+  for (let i = 0; i < maxTry; i++) {
+    const url = nextCandidates()[0];
+    if (!seen(url)) {
+      console.log(`[BG] nextUniqueUrl: found fresh URL on try ${i + 1}`);
+      return url;
     }
   }
 
-  // 极端情况：清空去重队列重新开始
-  console.log(`[BG] nextCandidates: all retries failed, clearing recent queue`);
-  recent.length = 0;
-  recentSet.clear();
-  return [makeUnsplash(), makePicsum()];
+  // 实在撞满了：强制用新 seed
+  const force = `https://picsum.photos/seed/${nextSeed()}/1920/1080?grayscale`;
+  console.log(`[BG] nextUniqueUrl: all tries exhausted, forcing new URL`);
+  return force;
 }
 
 // 预加载带超时（默认 4s）
@@ -172,7 +182,9 @@ export function preloadWithTimeout(url: string, timeoutMs = 4000): Promise<strin
 
     img.onload = () => {
       clearTimeout(timer);
-      resolve(url);
+      // ★ 取最终 URL（已是直链，可能经过重定向）
+      const finalUrl = img.src || url;
+      resolve(finalUrl);
     };
 
     img.onerror = () => {
