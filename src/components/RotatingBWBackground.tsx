@@ -1,3 +1,0 @@
-import { useEffect, useState } from 'react';
-const SOURCES=['https://picsum.photos/1600/900?random=21&grayscale','https://picsum.photos/1600/900?random=33&grayscale','https://picsum.photos/1600/900?random=57&grayscale'];
-export default function RotatingBWBackground(){const [i,setI]=useState(0);useEffect(()=>{const t=setInterval(()=>setI(v=>(v+1)%SOURCES.length),6000);return()=>clearInterval(t)},[]);return(<div className='fixed inset-0 -z-10'><div className='absolute inset-0 bg-cover bg-center transition-opacity duration-700' style={{backgroundImage:`url(${SOURCES[i]})`}}/><div className='absolute inset-0 bg-black/55'/></div>)}

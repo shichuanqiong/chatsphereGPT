@@ -33,24 +33,21 @@ export const PICSUM_FALLBACKS = [
 const recent = new Set<string>();
 const MAX_RECENT = 24;  // 增加去重窗口以应对只用 Picsum
 
-const cb = () => {
-  const r1 = Math.random().toString(36).substring(2, 18);
-  const r2 = Math.random().toString(36).substring(2, 18);
-  return `${Date.now()}-${r1}-${r2}`;
-};
-
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-// 只用 Picsum（Unsplash CORS 问题太多）
+// 直接返回固定 ID 的 Picsum 图片，避免 seed 导致的 302 重定向
 function makePicsum(): string {
-  return `https://picsum.photos/seed/${cb()}/1920/1080?grayscale`;
+  return pick(PICSUM_FALLBACKS);
 }
 
 export function nextCandidates(n = 2): string[] {
-  // 生成 Picsum 候选
-  const candidates = [makePicsum(), makePicsum(), makePicsum()];
+  // 生成 Picsum 固定 ID 候选（不用 seed，直接从 PICSUM_FALLBACKS 中随机选）
+  const candidates: string[] = [];
+  for (let i = 0; i < 3; i++) {
+    candidates.push(makePicsum());
+  }
   
-  // 过滤掉 recent 中的 URL
+  // 过滤掉 recent 中的 URL 和重复的 URL
   const uniq = Array.from(new Set(candidates)).filter(u => !recent.has(u));
   
   // 如果有未用过的候选，直接返回
@@ -60,7 +57,10 @@ export function nextCandidates(n = 2): string[] {
   
   // 如果全在 recent 中，生成新候选直到找到不在 recent 的
   for (let attempt = 0; attempt < 5; attempt++) {
-    const newCandidates = [makePicsum(), makePicsum(), makePicsum()];
+    const newCandidates: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      newCandidates.push(makePicsum());
+    }
     const freshOnes = Array.from(new Set(newCandidates)).filter(u => !recent.has(u));
     
     if (freshOnes.length > 0) {

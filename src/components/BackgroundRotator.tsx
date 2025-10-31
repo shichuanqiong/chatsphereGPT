@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { nextCandidates, preloadWithTimeout, markRecent, PICSUM_FALLBACKS } from '@/utils/bg';
 
 type Props = {
@@ -10,94 +11,155 @@ type Props = {
   storageKey?: string;
 };
 
-const DEFAULT_PLACEHOLDER = PICSUM_FALLBACKS[0];
+const DEFAULT_PLACEHOLDER = PICSUM_FALLBACKS[0] ?? '';
+
+type GlobalGuard = {
+  mainTimer: number | null;
+  retryTimer: number | null;
+  inFlight: boolean;
+  nextSwitchAt: number;
+};
+
+declare global {
+  interface Window { __BG_ROTATOR__?: GlobalGuard }
+}
 
 export default function BackgroundRotator({
-  intervalMs = 25000,
+  intervalMs = 15000,
   darken = 0.45,
   contrast = 1.05,
   brightness = 0.95,
   timeoutMs = 4000,
   storageKey = 'chatsphere:lastBg',
 }: Props) {
-  // ★ 第一层：初值不空（首屏即有图）
+
   const initial = useMemo<string>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      return saved || DEFAULT_PLACEHOLDER;
-    } catch {
-      return DEFAULT_PLACEHOLDER;
-    }
+    try { return localStorage.getItem(storageKey) || DEFAULT_PLACEHOLDER; }
+    catch { return DEFAULT_PLACEHOLDER; }
   }, [storageKey]);
 
-  const [src, setSrc] = useState<string>(initial);
-  const fbIdx = useRef(0);
-  const timer = useRef<number | null>(null);
+  const [url, setUrl] = useState<string>(initial);
 
-  // ★ 第二层：onError 立即切 Picsum（v1.08 核心）
-  const onError = () => {
-    fbIdx.current = (fbIdx.current + 1) % PICSUM_FALLBACKS.length;
-    setSrc(PICSUM_FALLBACKS[fbIdx.current]);
-  };
+  // 全局守护对象（只在初始化时创建一次）
+  const guardRef = useRef<GlobalGuard>();
+  if (!guardRef.current) {
+    if (!window.__BG_ROTATOR__) {
+      window.__BG_ROTATOR__ = { mainTimer: null, retryTimer: null, inFlight: false, nextSwitchAt: Date.now() };
+    } else {
+      const g = window.__BG_ROTATOR__;
+      if (g?.mainTimer) { clearTimeout(g.mainTimer); g.mainTimer = null; }
+      if (g?.retryTimer) { clearTimeout(g.retryTimer); g.retryTimer = null; }
+      g.inFlight = false;
+    }
+    guardRef.current = window.__BG_ROTATOR__!;
+  }
 
-  const apply = (next: string) => {
-    if (!next) return;
-    setSrc(next);
-    markRecent(next);
-    try {
-      localStorage.setItem(storageKey, next);
-    } catch {}
-  };
+  // 参数 ref（用于异步回调中访问最新值）
+  const paramsRef = useRef({ intervalMs, timeoutMs, storageKey });
+  paramsRef.current = { intervalMs, timeoutMs, storageKey };
 
-  // 后台预加载下一张（非阻塞）
-  const loadNext = async () => {
+  // tick 函数：纯粹的异步逻辑，不产生新的状态对象
+  const tick = async () => {
+    const guard = guardRef.current!;
+    const now = Date.now();
+
+    // 节拍未到，等待
+    if (now < guard.nextSwitchAt) {
+      const waitMs = guard.nextSwitchAt - now;
+      schedule(waitMs);
+      return;
+    }
+
+    // 正在预加载，避免并发
+    if (guard.inFlight) {
+      schedule(250);
+      return;
+    }
+
+    guard.inFlight = true;
+
+    // 预加载
     const candidates = nextCandidates();
+    let next: string | null = null;
     try {
-      const winner = await Promise.race(
-        candidates.map(u => preloadWithTimeout(u, timeoutMs))
-      );
-      apply(winner);
+      next = await Promise.race(candidates.map(u => preloadWithTimeout(u, paramsRef.current.timeoutMs)));
     } catch {
-      // ★ 全失败也要有后备：切换到 Picsum 固定 ID
-      // 这样保证图片始终在更新，即使网络差
-      fbIdx.current = (fbIdx.current + 1) % PICSUM_FALLBACKS.length;
-      apply(PICSUM_FALLBACKS[fbIdx.current]);
+      next = null;
+    }
+
+    guard.inFlight = false;
+
+    if (next) {
+      // 应用新图（这会触发 setUrl，导致组件重渲）
+      setUrl(prev => (prev === next ? prev : next));
+      markRecent(next);
+      guard.nextSwitchAt = Date.now() + paramsRef.current.intervalMs;
+      try { localStorage.setItem(paramsRef.current.storageKey, next); } catch {}
+
+      // 立即安排下一个（不等待重渲完成）
+      schedule(paramsRef.current.intervalMs);
+    } else {
+      // 失败重试
+      if (guard.retryTimer) clearTimeout(guard.retryTimer);
+      guard.retryTimer = window.setTimeout(() => schedule(0), 3000);
     }
   };
 
+  // schedule 函数：清理旧计时器，设置新计时器
+  const schedule = (delay: number) => {
+    const guard = guardRef.current!;
+
+    if (guard.mainTimer) clearTimeout(guard.mainTimer);
+    guard.mainTimer = window.setTimeout(tick, delay);
+  };
+
+  // useEffect：只在首次挂载和 intervalMs 变化时运行
   useEffect(() => {
-    let mounted = true;
+    const guard = guardRef.current!;
+    const now = Date.now();
 
-    // 后台加载（非阻塞）
-    void loadNext();
+    // 对齐节拍
+    if (now >= guard.nextSwitchAt) {
+      guard.nextSwitchAt = now + intervalMs;
+    }
 
-    // 25s 轮换
-    timer.current = window.setInterval(() => {
-      if (!mounted) return;
-      void loadNext();
-    }, intervalMs);
+    const initialDelay = Math.max(0, guard.nextSwitchAt - now);
+    schedule(initialDelay);
+
+    // 页面可见性处理
+    const onVisibility = () => {
+      if (!document.hidden) {
+        const t = Math.max(0, guard.nextSwitchAt - Date.now());
+        schedule(t);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
-      mounted = false;
-      if (timer.current) window.clearInterval(timer.current);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [intervalMs, timeoutMs, loadNext]);
+
+    // 只依赖 intervalMs，其他都用 ref 访问
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intervalMs]);
 
   return (
-    <div className="fixed inset-0 -z-10">
-      {/* ★ 用 img 标签 + onError，实现 v1.08 三层防护 */}
-      <img
-        src={src}
-        onError={onError}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        style={{ filter: `grayscale(100%) contrast(${contrast}) brightness(${brightness})` }}
-      />
-      {/* ★ 第四层：背景色兜底 */}
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: `rgba(0,0,0,${darken})` }}
-      />
-    </div>
+    <div
+      aria-hidden
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: -1,
+        backgroundImage: `linear-gradient(rgba(0,0,0,${darken}), rgba(0,0,0,${darken})), url("${url}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundAttachment: 'fixed',
+        transition: 'background-image 800ms ease-in-out',
+        filter: `grayscale(100%) contrast(${contrast}) brightness(${brightness})`,
+        pointerEvents: 'none',
+        backgroundColor: '#111',
+      }}
+    />
   );
 }
