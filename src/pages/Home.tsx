@@ -555,6 +555,20 @@ export default function Home() {
       // 只订阅还没有缓存的用户（用 ref 追踪，避免重复订阅）
       if (!subscribedUsersRef.current.has(userId)) {
         subscribedUsersRef.current.add(userId);
+        
+        // Step 1: 快速初始加载 (get) - 立即拿到数据，避免 fallback
+        (async () => {
+          try {
+            const snap = await get(ref(db, `/profiles/${userId}`));
+            if (snap.exists()) {
+              setProfiles(prev => ({ ...prev, [userId]: snap.val() }));
+            }
+          } catch (e) {
+            console.warn(`Failed to fetch profile ${userId}:`, e);
+          }
+        })();
+        
+        // Step 2: 订阅后续变化 (onValue) - 持续监听更新
         const unsub = onValue(ref(db, `/profiles/${userId}`), (snap) => {
           const profileData = snap.val();
           if (profileData) {
