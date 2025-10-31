@@ -13,7 +13,7 @@ export default function App(){
   return(
     <AuthProvider>
       <CurrentRoomProvider>
-        <HashRouter basename={import.meta.env.BASE_URL}>
+        <HashRouter>
           <Routes>
             <Route path='/' element={<Login/>}/>
             <Route path='/home' element={<Guard><Home/></Guard>}/>
