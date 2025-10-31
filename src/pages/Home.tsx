@@ -258,6 +258,9 @@ export default function Home() {
         
         // 启动房间清理调度器
         stopCleanup?.(); stopCleanup = startRoomCleanupScheduler();
+      } else {
+        // 用户登出：清理内存态，避免复用上一个用户的 profile
+        setProfiles({});
       }
     });
     return () => { 
