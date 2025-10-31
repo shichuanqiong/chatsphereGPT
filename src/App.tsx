@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
 import { CurrentRoomProvider } from './state/currentRoom';
 import Login from './pages/Login';
@@ -13,7 +13,7 @@ export default function App(){
   return(
     <AuthProvider>
       <CurrentRoomProvider>
-        <HashRouter basename={import.meta.env.BASE_URL}>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
             <Route path='/' element={<Login/>}/>
             <Route path='/home' element={<Guard><Home/></Guard>}/>
@@ -26,7 +26,7 @@ export default function App(){
             {/* 404 catch-all */}
             <Route path='*' element={<Navigate to='/' replace/>}/>
           </Routes>
-        </HashRouter>
+        </BrowserRouter>
       </CurrentRoomProvider>
     </AuthProvider>
   )
