@@ -9,7 +9,7 @@ import {
   fetchSignInMethodsForEmail,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { ref, set, serverTimestamp, runTransaction, remove } from 'firebase/database';
+import { ref, set, serverTimestamp, runTransaction, remove, get } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useToast } from '../components/Toast';
@@ -28,6 +28,7 @@ export default function Login() {
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminLoggingIn, setAdminLoggingIn] = useState(false);
 
   // 快捷键监听：Ctrl+Shift+A 打开 Admin 登录
   useEffect(() => {
@@ -48,19 +49,29 @@ export default function Login() {
   }, [showAdminLogin]);
 
   // Admin 登录验证
-  const handleAdminLogin = () => {
-    // 这里使用简单的硬编码验证，生产环境应该改成真实的后端验证
-    const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'Chatadmin2025$';
+  const handleAdminLogin = async () => {
+    if (adminLoggingIn) return;
+    setAdminLoggingIn(true);
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, adminUsername, adminPassword);
+      const adminRef = ref(db, `/roles/${user.uid}/admin`);
+      const adminSnap = await get(adminRef);
+      const isAdmin = adminSnap.val() === true;
 
-    if (adminUsername === ADMIN_USERNAME && adminPassword === ADMIN_PASSWORD) {
-      show('✅ Admin 登录成功！', 'success');
-      localStorage.setItem('adminToken', 'logged_in');
-      setShowAdminLogin(false);
-      setTimeout(() => nav('/admin'), 500);
-    } else {
-      show('❌ Admin 用户名或密码错误', 'error');
+      if (isAdmin) {
+        show('✅ Admin 登录成功！', 'success');
+        localStorage.setItem('adminToken', 'logged_in');
+        setShowAdminLogin(false);
+        setTimeout(() => nav('/admin'), 500);
+      } else {
+        show('❌ 您没有管理员权限。', 'error');
+        setAdminPassword('');
+      }
+    } catch (e: any) {
+      show(`❌ 管理员登录失败: ${e?.message || e}`, 'error');
       setAdminPassword('');
+    } finally {
+      setAdminLoggingIn(false);
     }
   };
 
@@ -614,13 +625,14 @@ export default function Login() {
             
             <div className="space-y-4">
               <input
-                type="text"
-                placeholder="Username"
+                type="email"
+                placeholder="Email"
                 value={adminUsername}
                 onChange={(e) => setAdminUsername(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:border-white/40 transition-all placeholder-white/50 focus:outline-none"
                 autoFocus
+                disabled={adminLoggingIn}
               />
               <input
                 type="password"
@@ -629,19 +641,22 @@ export default function Login() {
                 onChange={(e) => setAdminPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:border-white/40 transition-all placeholder-white/50 focus:outline-none"
+                disabled={adminLoggingIn}
               />
             </div>
 
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleAdminLogin}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                disabled={adminLoggingIn}
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Login
+                {adminLoggingIn ? '登录中...' : 'Login'}
               </button>
               <button
                 onClick={() => setShowAdminLogin(false)}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-200"
+                disabled={adminLoggingIn}
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
