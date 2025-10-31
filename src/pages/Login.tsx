@@ -94,7 +94,7 @@ export default function Login() {
   ];
 
   const [mode, setMode] = useState<'guest' | 'register' | 'login'>('login');
-  const [nickname, setNickname] = useState(localStorage.getItem('nickname') || '');
+  const [nickname, setNickname] = useState('');
   const storedGender = localStorage.getItem('gender');
   const [gender, setGender] = useState<'male' | 'female'>(storedGender === 'female' ? 'female' : 'male');
   const storedAge = localStorage.getItem('age');
@@ -176,8 +176,15 @@ export default function Login() {
       (window as any)._uid = user.uid;
       try { localStorage.setItem('uid', user.uid); } catch {}
 
-      // 2) 缓存基础资料（回填用）
-      localStorage.setItem('nickname', normalizedNickname);
+      // 2) 缓存基础资料（按uid分桶，仅用于预填，不用于显示）
+      const profileCache = {
+        name: normalizedNickname,
+        ageGroup: normalizedAge,
+        gender,
+        country: normalizedCountry,
+        v: 1
+      };
+      try { localStorage.setItem(`cs.profile.${user.uid}`, JSON.stringify(profileCache)); } catch {}
       localStorage.setItem('gender', gender);
       localStorage.setItem('age', String(normalizedAge));
       localStorage.setItem('country', normalizedCountry);
