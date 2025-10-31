@@ -46,8 +46,30 @@ function makePicsum(): string {
 
 export function nextCandidates(n = 2): string[] {
   const candidates = [makeUnsplash(), makePicsum()];
+  
+  // 第一次尝试：过滤掉 recent 中的 URL
   const uniq = Array.from(new Set(candidates)).filter(u => !recent.has(u));
-  return uniq.length ? uniq : candidates;
+  
+  // 如果有未用过的候选，直接返回
+  if (uniq.length > 0) {
+    return uniq;
+  }
+  
+  // 如果全在 recent 中（16 张已用完），生成新候选直到找到不在 recent 的
+  // 最多尝试 5 次，避免无限循环
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const newCandidates = [makeUnsplash(), makePicsum()];
+    const freshOnes = Array.from(new Set(newCandidates)).filter(u => !recent.has(u));
+    
+    if (freshOnes.length > 0) {
+      return freshOnes;
+    }
+  }
+  
+  // 极端情况：仍未找到新的，清空 recent 重新开始
+  // 这保证了最坏情况下也会返回新的候选
+  recent.clear();
+  return [makeUnsplash(), makePicsum()];
 }
 
 export function markRecent(url: string) {

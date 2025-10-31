@@ -58,7 +58,10 @@ export default function BackgroundRotator({
       );
       apply(winner);
     } catch {
-      // 全失败也不切换，onError 会处理
+      // ★ 全失败也要有后备：切换到 Picsum 固定 ID
+      // 这样保证图片始终在更新，即使网络差
+      fbIdx.current = (fbIdx.current + 1) % PICSUM_FALLBACKS.length;
+      apply(PICSUM_FALLBACKS[fbIdx.current]);
     }
   };
 
@@ -78,7 +81,7 @@ export default function BackgroundRotator({
       mounted = false;
       if (timer.current) window.clearInterval(timer.current);
     };
-  }, [intervalMs]);
+  }, [intervalMs, timeoutMs, loadNext]);
 
   return (
     <div className="fixed inset-0 -z-10">
