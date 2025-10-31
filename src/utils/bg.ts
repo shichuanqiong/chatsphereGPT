@@ -58,12 +58,49 @@ export const PICSUM_FALLBACKS = [
   'https://picsum.photos/id/1107/1920/1080?grayscale',
 ];
 
-const recent = new Set<string>();
-const MAX_RECENT = 32;  // 增加去重窗口以支持更多候选
+// ★ 时间窗口的去重策略（而非固定数量）
+export const NO_REPEAT_MINUTES = 45;
+
+const DEFAULT_INTERVAL_MS = 15000;
+
+// 计算应该保存的最大 URL 数量
+let maxRecent = Math.ceil((NO_REPEAT_MINUTES * 60 * 1000) / DEFAULT_INTERVAL_MS);
+
+// 最近使用队列（FIFO）+ Set 加速查询
+const recent: string[] = [];
+const recentSet = new Set<string>();
 
 let queryIndex = 0;  // 轮流使用不同的 Unsplash query
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+
+// ★ 组件在挂载时调用，同步轮换间隔以自动调整去重窗口
+export function setIntervalForBg(intervalMs: number) {
+  maxRecent = Math.ceil((NO_REPEAT_MINUTES * 60 * 1000) / intervalMs);
+  console.log(`[BG] setIntervalForBg: intervalMs=${intervalMs}ms, maxRecent=${maxRecent}`);
+}
+
+// ★ 检查 URL 是否在最近去重窗口内
+export function seen(u: string): boolean {
+  return recentSet.has(u);
+}
+
+// ★ 记住这个 URL（加入去重队列）
+export function remember(u: string) {
+  // 如果已在集合中，不重复添加
+  if (recentSet.has(u)) return;
+
+  recent.push(u);
+  recentSet.add(u);
+
+  // 维持队列大小不超过 maxRecent
+  while (recent.length > maxRecent) {
+    const oldest = recent.shift()!;
+    recentSet.delete(oldest);
+  }
+
+  console.log(`[BG] remember: added ${u.substring(0, 50)}..., queue size=${recent.length}/${maxRecent}`);
+}
 
 // Unsplash 用预定义的 query（不用 seed，避免 302 重定向）
 function makeUnsplash(): string {
@@ -88,16 +125,18 @@ export function nextCandidates(n = 2): string[] {
       candidates.push(makePicsum());
     }
   }
-  
-  // 过滤掉 recent 中的 URL 和重复的 URL
-  const uniq = Array.from(new Set(candidates)).filter(u => !recent.has(u));
-  
+
+  // 过滤掉 seen（去重队列中）的 URL 和重复的 URL
+  const uniq = Array.from(new Set(candidates)).filter(u => !seen(u));
+
   // 如果有未用过的候选，直接返回
   if (uniq.length > 0) {
+    console.log(`[BG] nextCandidates: found ${uniq.length} fresh candidates`);
     return uniq.slice(0, n);
   }
-  
-  // 如果全在 recent 中，生成新候选直到找到不在 recent 的
+
+  // 如果全在去重队列中，生成新候选直到找到不在队列的
+  console.log(`[BG] nextCandidates: all candidates in recent, retrying...`);
   for (let attempt = 0; attempt < 5; attempt++) {
     const newCandidates: string[] = [];
     for (let i = 0; i < 3; i++) {
@@ -107,21 +146,19 @@ export function nextCandidates(n = 2): string[] {
         newCandidates.push(makePicsum());
       }
     }
-    const freshOnes = Array.from(new Set(newCandidates)).filter(u => !recent.has(u));
-    
+    const freshOnes = Array.from(new Set(newCandidates)).filter(u => !seen(u));
+
     if (freshOnes.length > 0) {
+      console.log(`[BG] nextCandidates: retry ${attempt + 1} successful, found ${freshOnes.length}`);
       return freshOnes.slice(0, n);
     }
   }
-  
-  // 极端情况：清空 recent 重新开始
-  recent.clear();
-  return [makeUnsplash(), makePicsum()];
-}
 
-export function markRecent(url: string) {
-  recent.add(url);
-  while (recent.size > MAX_RECENT) recent.delete(recent.values().next().value);
+  // 极端情况：清空去重队列重新开始
+  console.log(`[BG] nextCandidates: all retries failed, clearing recent queue`);
+  recent.length = 0;
+  recentSet.clear();
+  return [makeUnsplash(), makePicsum()];
 }
 
 // 预加载带超时（默认 4s）

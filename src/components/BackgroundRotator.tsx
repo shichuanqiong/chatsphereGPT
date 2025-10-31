@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { nextCandidates, preloadWithTimeout, markRecent, PICSUM_FALLBACKS } from '@/utils/bg';
+import { nextCandidates, preloadWithTimeout, remember, setIntervalForBg, PICSUM_FALLBACKS } from '@/utils/bg';
 
 type Props = {
   intervalMs?: number;
@@ -92,7 +92,7 @@ export default function BackgroundRotator({
     if (next) {
       // 应用新图（这会触发 setUrl，导致组件重渲）
       setUrl(prev => (prev === next ? prev : next));
-      markRecent(next);
+      remember(next);
       guard.nextSwitchAt = Date.now() + paramsRef.current.intervalMs;
       try { localStorage.setItem(paramsRef.current.storageKey, next); } catch {}
 
@@ -118,18 +118,25 @@ export default function BackgroundRotator({
     const guard = guardRef.current!;
     const now = Date.now();
 
+    console.log(`[BGR] useEffect: setup, now=${now}, nextSwitchAt=${guard.nextSwitchAt}`);
+
+    // ★ 同步去重窗口与轮换间隔
+    setIntervalForBg(intervalMs);
+
     // 对齐节拍
     if (now >= guard.nextSwitchAt) {
       guard.nextSwitchAt = now + intervalMs;
     }
 
     const initialDelay = Math.max(0, guard.nextSwitchAt - now);
+    console.log(`[BGR] useEffect: scheduling in ${initialDelay}ms`);
     schedule(initialDelay);
 
     // 页面可见性处理
     const onVisibility = () => {
       if (!document.hidden) {
         const t = Math.max(0, guard.nextSwitchAt - Date.now());
+        console.log(`[BGR] visibility: visible, rescheduling in ${t}ms`);
         schedule(t);
       }
     };
@@ -137,6 +144,7 @@ export default function BackgroundRotator({
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
+      console.log(`[BGR] useEffect: cleanup`);
       document.removeEventListener('visibilitychange', onVisibility);
     };
 
