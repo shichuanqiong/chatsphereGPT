@@ -586,7 +586,8 @@ export default function Home() {
   const onlineUsers = useMemo(() => {
     const now = Date.now();
     const alive = Object.keys(presence).filter((k) => now - (presence[k]?.lastSeen || 0) < 5 * 60 * 1000);
-    const people = alive.map((k) => profiles[k]).filter(Boolean) as Profile[];
+    // ✅ 修复：即使 profile 还没加载，也用 uid 作为 fallback 创建临时 profile
+    const people = alive.map((k) => profiles[k] || { uid: k, nickname: `User ${k.slice(0, 6)}` }).filter(Boolean) as Profile[];
     return people.filter((p) => p.uid !== uid && (genderFilter === 'all' ? true : p.gender === genderFilter));
   }, [presence, profiles, genderFilter, uid]);
 
