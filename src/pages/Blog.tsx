@@ -26,7 +26,7 @@ export default function Blog() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen text-white">
       {/* Header with Logo & Brand */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
