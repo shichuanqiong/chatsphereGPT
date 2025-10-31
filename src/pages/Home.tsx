@@ -285,6 +285,33 @@ export default function Home() {
     return unsub;
   }, [uid]);
 
+  // Step 4b: 为在线用户动态加载 profiles（避免全局订阅污染，但保证在线用户信息完整）
+  useEffect(() => {
+    const onlineUserIds = Object.keys(presence).filter(
+      k => presence[k]?.state === 'online' && k !== uid
+    );
+
+    if (onlineUserIds.length === 0) return;
+
+    // 批量加载这些用户的 profile
+    const unsubscribes: Array<() => void> = [];
+    
+    onlineUserIds.forEach(userId => {
+      // 只订阅还没有缓存的用户
+      if (!profiles[userId]) {
+        const unsub = onValue(ref(db, `/profiles/${userId}`), (snap) => {
+          const profileData = snap.val();
+          if (profileData) {
+            setProfiles(prev => ({ ...prev, [userId]: profileData }));
+          }
+        });
+        unsubscribes.push(unsub);
+      }
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
+  }, [presence, uid, profiles]);
+
   // 房主在线状态绑定
   useEffect(() => {
     if (!uid) return;
