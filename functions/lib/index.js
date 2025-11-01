@@ -2,6 +2,8 @@ import * as functions from 'firebase-functions/v2';
 import admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
+import { onMessageCreate, onMessageDelete } from './onMessageCounters';
+import { backfillUserMsgCount } from './tools/backfillUserMsgCount';
 // Initialize
 admin.initializeApp();
 const db = admin.firestore();
@@ -10,7 +12,8 @@ const rtdb = admin.database();
 const app = express();
 const allowedOrigins = [
     'https://shichuanqiong.github.io',
-    'https://chatsphere.app',
+    'https://chatsphere.live',
+    'https://www.chatsphere.live',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
@@ -40,7 +43,7 @@ const ADMIN_KEY = (() => {
     }
     // 备用：硬编码（本地开发）
     console.log('[INIT] ⚠ ADMIN_KEY hardcoded (fallback)');
-    const fallbackKey = 'ChatSphere2025AdminSecure';
+    const fallbackKey = 'ChatSphere2025Secure!@#$%';
     console.log('[INIT] Fallback key length:', fallbackKey.length);
     return fallbackKey;
 })();
@@ -103,12 +106,15 @@ app.get('/admin/metrics/top-rooms', async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// 4) 用户列表（来自 RTDB /profiles）
+// 4) 用户列表（来自 RTDB /profiles 和 /profilesStats）
 app.get('/admin/users', async (_req, res) => {
     try {
-        // ★ 修复：从 RTDB 的 /profiles 路径读取用户（不是 Firestore collection）
+        // 获取用户基础信息
         const profilesSnap = await rtdb.ref('/profiles').get();
         const profilesData = profilesSnap.val() || {};
+        // 获取用户统计信息（messageCount、lastMessageAt）
+        const statsSnap = await rtdb.ref('/profilesStats').get();
+        const statsData = statsSnap.val() || {};
         // 同时获取在线状态
         const presenceSnap = await rtdb.ref('/presence').get();
         const presenceData = presenceSnap.val() || {};
@@ -118,19 +124,24 @@ app.get('/admin/users', async (_req, res) => {
             const presence = presenceData[uid];
             const lastSeen = presence?.lastSeen ?? 0;
             const isOnline = presence?.state === 'online' && now - lastSeen < timeout;
+            // 从 profilesStats 读取统计数据
+            const stats = statsData[uid] || {};
             return {
                 uid,
                 name: data.nickname || data.displayName || data.name || '未知用户',
                 email: data.email || '',
                 status: isOnline ? 'online' : 'offline',
-                messageCount: data.messageCount || 0,
+                messageCount: stats.messageCount ?? 0,
+                lastMessageAt: stats.lastMessageAt ?? null,
                 createdAt: data.createdAt,
                 lastSeen: presence?.lastSeen,
             };
         });
+        console.log(`[admin/users] Returned ${users.length} users with stats from profilesStats`);
         res.json({ users });
     }
     catch (err) {
+        console.error('[admin/users] Error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -341,11 +352,11 @@ app.get('/admin/metrics/stream', async (req, res) => {
 app.post('/admin/seo/generate-sitemap', async (_req, res) => {
     try {
         const now = new Date().toISOString();
+        const today = new Date().toISOString().split('T')[0];
         // 获取所有活跃房间
         const roomsSnap = await rtdb.ref('/rooms').get();
         const roomsData = roomsSnap.val() || {};
         const currentTime = Date.now();
-        const eightHoursAgo = currentTime - (8 * 60 * 60 * 1000);
         // 过滤活跃房间
         const activeRooms = Object.entries(roomsData)
             .filter(([_, data]) => {
@@ -358,44 +369,74 @@ app.post('/admin/seo/generate-sitemap', async (_req, res) => {
         // 生成 sitemap.xml 内容
         let sitemapXml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         sitemapXml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-        // 主页
+        // 主页 - 最高优先级
         sitemapXml += '  <url>\n';
-        sitemapXml += '    <loc>https://chatsphere.app/</loc>\n';
-        sitemapXml += `    <lastmod>${now}</lastmod>\n`;
+        sitemapXml += '    <loc>https://chatsphere.live/</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
         sitemapXml += '    <changefreq>daily</changefreq>\n';
         sitemapXml += '    <priority>1.0</priority>\n';
         sitemapXml += '  </url>\n';
         // 登录页
         sitemapXml += '  <url>\n';
-        sitemapXml += '    <loc>https://chatsphere.app/login</loc>\n';
-        sitemapXml += `    <lastmod>${now}</lastmod>\n`;
+        sitemapXml += '    <loc>https://chatsphere.live/login</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
         sitemapXml += '    <changefreq>weekly</changefreq>\n';
         sitemapXml += '    <priority>0.8</priority>\n';
         sitemapXml += '  </url>\n';
-        // 博客
+        // 房间列表页面
         sitemapXml += '  <url>\n';
-        sitemapXml += '    <loc>https://chatsphere.app/blog</loc>\n';
-        sitemapXml += `    <lastmod>${now}</lastmod>\n`;
-        sitemapXml += '    <changefreq>weekly</changefreq>\n';
+        sitemapXml += '    <loc>https://chatsphere.live/rooms</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
+        sitemapXml += '    <changefreq>hourly</changefreq>\n';
         sitemapXml += '    <priority>0.9</priority>\n';
+        sitemapXml += '  </url>\n';
+        // 直消息页面
+        sitemapXml += '  <url>\n';
+        sitemapXml += '    <loc>https://chatsphere.live/dm</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
+        sitemapXml += '    <changefreq>daily</changefreq>\n';
+        sitemapXml += '    <priority>0.8</priority>\n';
+        sitemapXml += '  </url>\n';
+        // 博客页面
+        sitemapXml += '  <url>\n';
+        sitemapXml += '    <loc>https://chatsphere.live/blog</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
+        sitemapXml += '    <changefreq>weekly</changefreq>\n';
+        sitemapXml += '    <priority>0.7</priority>\n';
+        sitemapXml += '  </url>\n';
+        // 隐私政策
+        sitemapXml += '  <url>\n';
+        sitemapXml += '    <loc>https://chatsphere.live/privacy</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
+        sitemapXml += '    <changefreq>monthly</changefreq>\n';
+        sitemapXml += '    <priority>0.6</priority>\n';
+        sitemapXml += '  </url>\n';
+        // 服务条款
+        sitemapXml += '  <url>\n';
+        sitemapXml += '    <loc>https://chatsphere.live/terms</loc>\n';
+        sitemapXml += `    <lastmod>${today}</lastmod>\n`;
+        sitemapXml += '    <changefreq>monthly</changefreq>\n';
+        sitemapXml += '    <priority>0.6</priority>\n';
         sitemapXml += '  </url>\n';
         // 活跃房间页面
         activeRooms.forEach(roomId => {
             sitemapXml += '  <url>\n';
-            sitemapXml += `    <loc>https://chatsphere.app/r/${roomId}</loc>\n`;
-            sitemapXml += `    <lastmod>${now}</lastmod>\n`;
+            sitemapXml += `    <loc>https://chatsphere.live/r/${roomId}</loc>\n`;
+            sitemapXml += `    <lastmod>${today}</lastmod>\n`;
             sitemapXml += '    <changefreq>daily</changefreq>\n';
             sitemapXml += '    <priority>0.7</priority>\n';
             sitemapXml += '  </url>\n';
         });
         sitemapXml += '</urlset>\n';
-        // 保存到 Firestore 或返回
+        // 计算统计信息
+        const pageCount = 8 + activeRooms.length; // 8 个静态页面 + 动态房间页面
         res.json({
             success: true,
-            message: `Sitemap generated successfully with ${activeRooms.length} rooms`,
+            message: `Sitemap generated successfully with ${pageCount} URLs (${activeRooms.length} room pages + 8 static pages)`,
             timestamp: now,
             roomCount: activeRooms.length,
-            sitemapPreview: sitemapXml.substring(0, 500) + '...',
+            totalUrls: pageCount,
+            sitemapPreview: sitemapXml.substring(0, 800) + '...',
         });
     }
     catch (err) {
@@ -408,37 +449,73 @@ export const aggregateMetrics = functions.scheduler.onSchedule({ schedule: 'ever
     try {
         const now = Date.now();
         const oneDayAgo = now - 24 * 60 * 60 * 1000;
-        // 1) 聚合消息数量 & 分桶 & 热门房间
-        const messagesSnap = await db
-            .collection('messages')
-            .where('ts', '>=', admin.firestore.Timestamp.fromMillis(oneDayAgo))
-            .get();
+        console.log(`[aggregateMetrics] START: now=${now}, oneDayAgo=${oneDayAgo}`);
+        // ★ 修复：从 RTDB /messages 读取消息而不是 Firestore
+        const messagesSnap = await rtdb.ref('/messages').get();
+        const messagesData = messagesSnap.val() || {};
         let msg24h = 0;
+        let totalMsgCount = 0;
+        let invalidTimestampCount = 0;
+        let outOfRangeCount = 0;
         const buckets = Array.from({ length: 24 }, (_, i) => ({ h: i, c: 0 }));
         const roomCounts = {};
-        messagesSnap.forEach((doc) => {
-            msg24h++;
-            const data = doc.data();
-            const ts = data.ts.toMillis();
-            const hour = new Date(ts).getHours();
-            buckets[hour].c++;
-            if (data.roomId) {
-                roomCounts[data.roomId] = (roomCounts[data.roomId] ?? 0) + 1;
-            }
+        // 遍历所有房间的消息
+        Object.entries(messagesData).forEach(([roomId, messages]) => {
+            if (!messages || typeof messages !== 'object')
+                return;
+            Object.entries(messages).forEach(([msgId, msg]) => {
+                totalMsgCount++;
+                const msgTime = msg?.createdAt;
+                // ★ 改进：检查 msgTime 是否真的是数字
+                if (typeof msgTime !== 'number' || msgTime <= 0) {
+                    invalidTimestampCount++;
+                    console.warn(`[aggregateMetrics] Invalid timestamp: room=${roomId}, msgId=${msgId}, createdAt=${msgTime}`);
+                    return;
+                }
+                // 只计算 24 小时内的消息
+                if (msgTime >= oneDayAgo && msgTime <= now) {
+                    msg24h++;
+                    // 分桶统计（按本地时区小时而不是UTC，匹配服务器时区 America/Los_Angeles）
+                    const localDate = new Date(msgTime);
+                    // 获取本地时区的小时（Pacific Time）
+                    const localHour = localDate.getHours();
+                    if (localHour >= 0 && localHour < 24 && buckets[localHour]) {
+                        buckets[localHour].c++;
+                    }
+                    else {
+                        console.warn(`[aggregateMetrics] Invalid hour: msgTime=${msgTime}, localHour=${localHour}`);
+                    }
+                    // 房间消息数统计
+                    roomCounts[roomId] = (roomCounts[roomId] ?? 0) + 1;
+                }
+                else {
+                    outOfRangeCount++;
+                }
+            });
         });
+        console.log(`[aggregateMetrics] Messages: total=${totalMsgCount}, invalid_ts=${invalidTimestampCount}, out_of_range=${outOfRangeCount}, counted=${msg24h}`);
+        console.log(`[aggregateMetrics] Buckets:`, buckets);
         // 排序热门房间（取前 3）
-        const topRooms = Object.entries(roomCounts)
+        let topRooms = Object.entries(roomCounts)
             .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
-            .map(([roomId, count]) => ({ name: roomId, count })); // 可后续加房间名
+            .map(([roomId, count]) => ({ roomId, count }));
+        // 获取房间名字（数据丰富化）
+        const roomsSnap = await rtdb.ref('/rooms').get();
+        const roomsData = roomsSnap.exists() ? roomsSnap.val() : {};
+        const topRoomsWithNames = topRooms.map(room => {
+            const roomInfo = roomsData[room.roomId];
+            const roomName = roomInfo?.name || room.roomId; // 如果没有名字就用 ID
+            return { name: roomName, count: room.count };
+        });
         // 2) 写入 metrics/runtime
         await db.doc('metrics/runtime').set({
             msg24h,
             buckets,
-            topRooms,
+            topRooms: topRoomsWithNames,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-        console.log(`✓ Metrics aggregated: msg24h=${msg24h}, buckets updated, topRooms=${topRooms.length}`);
+        console.log(`✓ Metrics aggregated: msg24h=${msg24h}, buckets updated, topRooms=${topRoomsWithNames.length}`);
     }
     catch (err) {
         console.error('aggregateMetrics error:', err);
@@ -469,28 +546,52 @@ export const updateOnlineCount = functions.scheduler.onSchedule({ schedule: 'eve
 // 每天 00:05 UTC 计算 DAU
 export const calculateDailyActiveUsers = functions.scheduler.onSchedule({ schedule: '5 0 * * *', timeZone: 'UTC' }, async () => {
     try {
-        const now = new Date();
-        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const now = Date.now();
+        const yesterday = new Date(now - 24 * 60 * 60 * 1000);
         const dateStr = yesterday.toISOString().split('T')[0]; // yyyy-mm-dd
-        // 昨天的消息
-        const messagesSnap = await db
-            .collection('messages')
-            .where('ts', '>=', admin.firestore.Timestamp.fromDate(yesterday))
-            .where('ts', '<', admin.firestore.Timestamp.fromDate(now))
-            .get();
+        console.log(`[calculateDailyActiveUsers] START for date ${dateStr}`);
+        // 从 RTDB /messages 读取消息（不是 Firestore）
+        const messagesSnap = await rtdb.ref('/messages').get();
+        if (!messagesSnap.exists()) {
+            console.log(`[DAU] No messages found for ${dateStr}, dau=0`);
+            await db.doc('metrics/runtime').set({ dau: 0, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            return;
+        }
+        const messagesData = messagesSnap.val();
         const uniqueUsers = new Set();
-        messagesSnap.forEach((doc) => {
-            const data = doc.data();
-            if (data.userId) {
-                uniqueUsers.add(data.userId);
-            }
+        const oneDayAgo = yesterday.getTime();
+        const endTime = new Date().getTime();
+        console.log(`[DAU] Time range: ${oneDayAgo} to ${endTime} (${(endTime - oneDayAgo) / 1000 / 60 / 60} hours)`);
+        let totalMsgCount = 0;
+        let validMsgCount = 0;
+        let noAuthorCount = 0;
+        // 遍历所有房间的消息
+        Object.entries(messagesData).forEach(([roomId, roomMessages]) => {
+            if (!roomMessages || typeof roomMessages !== 'object')
+                return;
+            Object.entries(roomMessages).forEach(([msgId, msg]) => {
+                totalMsgCount++;
+                const createdAt = msg?.createdAt;
+                const authorId = msg?.authorId;
+                // 检查时间戳类型和范围（24小时内）
+                if (typeof createdAt === 'number' && createdAt >= oneDayAgo && createdAt <= endTime) {
+                    validMsgCount++;
+                    // 检查用户 ID
+                    if (authorId && typeof authorId === 'string') {
+                        uniqueUsers.add(authorId);
+                    }
+                    else {
+                        noAuthorCount++;
+                    }
+                }
+            });
         });
         const dau = uniqueUsers.size;
-        // 写入 daily_active_users/{date}
+        console.log(`[DAU] Messages: total=${totalMsgCount}, valid_ts=${validMsgCount}, no_author=${noAuthorCount}, unique_users=${dau}`);
+        console.log(`[DAU] User IDs:`, Array.from(uniqueUsers));
         await db.doc(`daily_active_users/${dateStr}`).set({ count: dau });
-        // 同时更新 metrics/runtime.dau
         await db.doc('metrics/runtime').set({ dau, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-        console.log(`✓ DAU calculated for ${dateStr}: ${dau}`);
+        console.log(`✓ DAU calculated for ${dateStr}: ${dau} unique users`);
     }
     catch (err) {
         console.error('calculateDailyActiveUsers error:', err);
@@ -498,4 +599,9 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule({ schedu
 });
 // ============ 导出 HTTP API ============
 export const api = functions.https.onRequest(app);
+// ★ Message Counter Maintenance Triggers
+export { onMessageCreate, onMessageDelete };
+// ★ One-time Backfill Script
+export { backfillUserMsgCount };
+console.log('[deploy] counters installed');
 //# sourceMappingURL=index.js.map

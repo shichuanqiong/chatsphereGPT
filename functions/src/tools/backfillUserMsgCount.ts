@@ -3,8 +3,11 @@ import * as admin from 'firebase-admin';
 
 const db = admin.database();
 
-export const backfillUserMsgCount = functions.https.onCall(async (data, context) => {
+export const backfillUserMsgCount = functions.https.onCall(async (request: any) => {
   try {
+    const data = request.data;
+    const context = request;
+    
     // 权限检查：仅认证用户且必须是 admin
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'User not authenticated');
@@ -29,11 +32,11 @@ export const backfillUserMsgCount = functions.https.onCall(async (data, context)
     let totalMessages = 0;
     let processedRooms = 0;
 
-    roomsSnap.forEach((roomSnap) => {
+    roomsSnap.forEach((roomSnap: any) => {
       const roomId = roomSnap.key;
       let roomMsgCount = 0;
 
-      roomSnap.forEach((msgSnap) => {
+      roomSnap.forEach((msgSnap: any) => {
         const m = msgSnap.val();
         const authorId = m?.authorId;
 

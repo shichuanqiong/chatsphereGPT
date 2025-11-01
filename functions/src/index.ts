@@ -50,7 +50,7 @@ const ADMIN_KEY = (() => {
   
   // 备用：硬编码（本地开发）
   console.log('[INIT] ⚠ ADMIN_KEY hardcoded (fallback)');
-  const fallbackKey = 'ChatSphere2025AdminSecure';
+  const fallbackKey = 'ChatSphere2025Secure!@#$%';
   console.log('[INIT] Fallback key length:', fallbackKey.length);
   return fallbackKey;
 })();
@@ -569,7 +569,7 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
       const roomsSnap = await rtdb.ref('/rooms').get();
       const roomsData = roomsSnap.exists() ? roomsSnap.val() : {};
       
-      topRooms = topRooms.map(room => {
+      const topRoomsWithNames: Array<{ name: string; count: number }> = topRooms.map(room => {
         const roomInfo = roomsData[room.roomId];
         const roomName = roomInfo?.name || room.roomId;  // 如果没有名字就用 ID
         return { name: roomName, count: room.count };
@@ -580,13 +580,13 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
         {
           msg24h,
           buckets,
-          topRooms,
+          topRooms: topRoomsWithNames,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
 
-      console.log(`✓ Metrics aggregated: msg24h=${msg24h}, buckets updated, topRooms=${topRooms.length}`);
+      console.log(`✓ Metrics aggregated: msg24h=${msg24h}, buckets updated, topRooms=${topRoomsWithNames.length}`);
     } catch (err: any) {
       console.error('aggregateMetrics error:', err);
     }

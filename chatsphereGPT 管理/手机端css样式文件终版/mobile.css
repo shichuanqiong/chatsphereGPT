@@ -1,0 +1,288 @@
+/* ========== iOS 键盘防抖 ========== */
+@media (max-width: 767px) {
+  :root {
+    --kb: 0px;                           /* JS 动态写入的键盘高度 */
+    --composer-h: 64px;                  /* 输入栏实际高度 */
+    --safe: env(safe-area-inset-bottom); /* iPhone 底部安全区 */
+  }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior-y: contain; /* 禁止回弹把布局挤飞 */
+  }
+
+  /* 让聊天滚动区占满"视觉视口"，避免 100vh 引起的跳动 */
+  .chat-scroll {
+    height: 100svh;                 /* 现代浏览器用 svh；iOS 16+ 好用 */
+    max-height: 100svh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--composer-h) + var(--safe));
+    scroll-behavior: smooth;
+  }
+
+  /* 输入栏固定贴底，避开键盘与安全区 */
+  .chat-input-bar {
+    position: sticky;               /* sticky 比 fixed 更稳定 */
+    bottom: 0;
+    z-index: 30;
+    transform: translateZ(0);       /* 触发复合层，减少 iOS 抖动 */
+    padding-bottom: var(--safe);
+    margin-bottom: var(--kb);       /* 当键盘弹起时，动态抬升 */
+  }
+
+  /* 若某些父元素带 transform/overflow 会让 sticky 失效，强制修复 */
+  .chat-scroll,
+  #chat-scroll,
+  #app-shell,
+  #app-shell > div {
+    transform: none !important;
+    overflow-y: auto !important;
+    contain: none !important;
+  }
+
+  /* 防止输入时 Safari 自动缩放（需保证字体 >=16px） */
+  .chat-input-bar input,
+  .chat-input-bar textarea {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* 让 Header 在手机端用 flex 重排（不改 JSX）*/
+  .app-header {
+    height: 48px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 12px !important;
+    grid-column: auto !important;
+    grid-template-columns: none !important;
+  }
+
+  /* Header 内部的 grid 容器在手机端改为 flex */
+  .app-header > div:first-child {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    gap: 8px;
+    padding: 0 !important;
+  }
+
+  /* 左：sidebar toggle —— 固定宽度，不收缩 */
+  #mobile-open-sidebar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  /* 中：midControlsAnchor —— 弹性区域，允许截断 */
+  #midControlsAnchor {
+    display: flex !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 隐藏品牌标题（在手机端移到侧栏） */
+  .header-brand {
+    display: none !important;
+  }
+
+  /* 右：操作区 —— 固定宽度 */
+  #rightControls {
+    display: flex !important;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    justify-self: auto !important;
+  }
+
+  /* 用户头像固定大小，不收缩 */
+  #userAvatarWrap {
+    flex: 0 0 auto;
+  }
+
+  #userAvatarWrap button {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  /* Inbox 和 Bell 按钮不收缩 */
+  #btnInbox,
+  #btnBell {
+    flex: 0 0 auto !important;
+  }
+
+  /* 用户名文本截断 */
+  #rightControls > div:nth-last-child(2) {
+    display: none;
+  }
+
+  /* 布局：隐藏左右栏，让中间全屏 */
+  #app-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 左侧栏默认隐藏，改成抽屉 */
+  #sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 78%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 50;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+  }
+
+  /* 抽屉遮罩层 */
+  html[data-sidebar="open"] #sidebar {
+    transform: translateX(0);
+  }
+  html[data-sidebar="open"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 45;
+  }
+
+  /* 右侧广告隐藏 */
+  #ads-right { display: none !important; }
+
+  /* 聊天主体容器 */
+  #app-shell > div {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* 消息滚动区 */
+  #chat-scroll {
+    max-height: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Emoji 面板：靠右悬浮 */
+  .emoji-panel {
+    position: fixed;
+    right: 10px;
+    bottom: 64px;
+    max-width: 92vw;
+    max-height: 46vh;
+    overflow: auto;
+    z-index: 60;
+  }
+
+  /* 侧栏顶部展示品牌 */
+  #sidebar-brand {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    z-index: 52;
+  }
+}
+
+/* 桌面端保持原样 */
+@media (min-width: 768px) {
+  #mobile-open-sidebar { display: none !important; }
+  .sidebar-brand { display: none !important; }
+}
+
+/* === Mobile-only: fix user menu dropdown position under avatar === */
+@media (max-width: 768px) {
+  :root {
+    /* 移动端 header 高度 */
+    --header-h: 56px;
+  }
+
+  /* 头像菜单容器选择器 */
+  .user-menu,
+  .dropdown-menu,
+  [role="menu"],
+  [data-menu="user"],
+  #profileMenu {
+    position: fixed !important;
+    top: calc(env(safe-area-inset-top) + var(--header-h) + 6px) !important;
+    right: calc(env(safe-area-inset-right) + 8px) !important;
+    left: auto !important;
+    transform: none !important;
+    min-width: 180px;
+    max-width: min(92vw, 320px);
+    z-index: 70 !important;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(0,0,0,.28);
+    backdrop-filter: blur(6px);
+  }
+
+  /* 头像按钮优化 */
+  .user-avatar-btn,
+  [data-role="user-avatar"],
+  #userAvatarWrap button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 防止菜单被容器 overflow 裁掉 */
+  .layout-root,
+  body {
+    overflow-x: clip;
+  }
+}
+
+/* === Mobile-only: Avatar menu styling & header truncation safeguards === */
+@media (max-width: 768px) {
+  /* 头像菜单：风格统一（若 JSX 未加够类，可用这些兜底） */
+  .avatar-menu {
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+  }
+
+  .avatar-menu .menu-item {
+    padding: 10px 14px;
+    border-radius: 12px;
+  }
+
+  /* 防止右侧容器被挤压，导致用户名不显示或不截断 */
+  .header-right {
+    min-width: 0;
+  }
+}
+
+/* === Mobile-only: Avatar menu button styling safeguards === */
+@media (max-width: 767px) {
+  .avatar-menu { border-radius: 16px; background: rgba(0,0,0,.8); backdrop-filter: blur(10px); }
+  .avatar-menu .menu-btn { border-radius: 12px; }
+}
+
+

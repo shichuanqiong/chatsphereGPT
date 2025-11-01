@@ -3,12 +3,19 @@ import * as admin from 'firebase-admin';
 
 const db = admin.database();
 
-// 1) 新消息 => 计数 +1，刷新 lastMessageAt
+// Database trigger for message creation/updates
 export const onMessageCreate = functions.database
-  .ref('/messages/{roomId}/{msgId}')
-  .onCreate(async (snap, ctx) => {
+  .onValueWritten('/messages/{roomId}/{msgId}', async (change) => {
     try {
-      const msg = snap.val() as { authorId?: string; createdAt?: number };
+      const after = change.data.after;
+      const before = change.data.before;
+      
+      // Only process if message is being created (before doesn't exist, after does)
+      if (before.exists() || !after.exists()) {
+        return null;
+      }
+      
+      const msg = after.val() as { authorId?: string; createdAt?: number };
 
       if (!msg?.authorId) return null;
 
@@ -26,12 +33,19 @@ export const onMessageCreate = functions.database
     }
   });
 
-// 2) 删除消息 => 计数 -1（不为负）
+// Database trigger for message deletion
 export const onMessageDelete = functions.database
-  .ref('/messages/{roomId}/{msgId}')
-  .onDelete(async (snap, ctx) => {
+  .onValueWritten('/messages/{roomId}/{msgId}', async (change) => {
     try {
-      const msg = snap.val() as { authorId?: string };
+      const after = change.data.after;
+      const before = change.data.before;
+      
+      // Only process if message is being deleted (before exists, after doesn't)
+      if (!before.exists() || after.exists()) {
+        return null;
+      }
+      
+      const msg = before.val() as { authorId?: string };
 
       if (!msg?.authorId) return null;
 

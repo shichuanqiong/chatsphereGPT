@@ -1,5 +1,6 @@
 // src/pages/Login.tsx
 import GlassCard from '../components/GlassCard';
+import ResetPasswordModal from '../components/auth/ResetPasswordModal';
 import { auth, db, presenceOnline } from '../firebase';
 import {
   signInAnonymously,
@@ -19,10 +20,21 @@ export default function Login() {
   const nav = useNavigate();
   const { show } = useToast();
 
+  // Reset password modal state
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     document.documentElement.removeAttribute('data-sidebar');
+    // Detect mobile
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
     return () => {
       document.documentElement.removeAttribute('data-sidebar');
+      window.removeEventListener('resize', checkMobile);
     };
   }, []);
 
@@ -428,13 +440,17 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => {
-                      const resetEmail = prompt('Enter your email address for password reset:');
-                      if (resetEmail) {
-                        sendPasswordResetEmail(auth, resetEmail).then(() => {
-                          show('Password reset email sent. Please check your inbox.', 'success', 2000);
-                        }).catch((err: any) => {
-                          show(`Error: ${err.message || 'Failed to send reset email'}`, 'error', 2000);
-                        });
+                      if (isMobile) {
+                        setShowResetPassword(true);
+                      } else {
+                        const resetEmail = prompt('Enter your email address for password reset:');
+                        if (resetEmail) {
+                          sendPasswordResetEmail(auth, resetEmail).then(() => {
+                            show('Password reset email sent. Please check your inbox.', 'success', 2000);
+                          }).catch((err: any) => {
+                            show(`Error: ${err.message || 'Failed to send reset email'}`, 'error', 2000);
+                          });
+                        }
                       }
                     }}
                     className="text-white/60 hover:text-white text-xs transition-colors"
@@ -766,6 +782,14 @@ export default function Login() {
             <p className="text-xs text-white/50 text-center mt-4">Press ESC to close</p>
           </div>
         </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPassword && (
+        <ResetPasswordModal
+          open={showResetPassword}
+          onClose={() => setShowResetPassword(false)}
+        />
       )}
     </main>
   );
