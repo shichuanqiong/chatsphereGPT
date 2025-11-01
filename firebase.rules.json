@@ -133,7 +133,7 @@
       }
     },
     "posts": {
-      ".read": "auth != null",
+      ".read": true,
       ".write": false
     }
   }
