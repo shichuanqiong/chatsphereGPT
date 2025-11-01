@@ -13,6 +13,7 @@ import { ref, set, serverTimestamp, runTransaction, remove, get } from 'firebase
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useToast } from '../components/Toast';
+import { ensureProfile } from '../lib/profileService';
 
 export default function Login() {
   const nav = useNavigate();
@@ -206,17 +207,9 @@ export default function Login() {
 
       // 4) 后台写入用户档案（失败只告警，不阻塞）
       try {
-        await set(ref(db, `/profiles/${user.uid}`), {
-          uid: user.uid,
-          nickname: normalizedNickname,
-          gender,
-          age: normalizedAge,
-          country: normalizedCountry,
-          isGuest,
-          createdAt: serverTimestamp(),
-        });
+        await ensureProfile(user.uid);
       } catch (e) {
-        console.warn('write profile failed:', e);
+        console.warn('ensure profile failed:', e);
       }
 
       // 5) 在线心跳（失败也不阻塞）
