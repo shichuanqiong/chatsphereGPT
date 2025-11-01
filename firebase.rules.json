@@ -3,10 +3,9 @@
     ".read": false,
     ".write": false,
     "profiles": {
-      ".indexOn": ["nickname", "email"],
       "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid",
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
         "bio": {
           ".validate": "newData.isString() && newData.val().length <= 500"
         },

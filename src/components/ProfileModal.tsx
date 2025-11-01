@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { ref, update, get } from 'firebase/database';
-import { auth, db } from '../firebase';
+import { useState, useEffect } from 'react';
+import { auth } from '../firebase';
+import { subscribeProfile, saveBio } from '../lib/profileService';
 import { useToast } from './Toast';
 
 type Profile = {
@@ -25,17 +25,30 @@ export default function ProfileModal({
   const [saving, setSaving] = useState(false);
   const { show } = useToast();
 
+  // 订阅当前用户的 profile，确保 bio 始终与服务器同步
+  useEffect(() => {
+    if (!open || !profile?.uid) return;
+
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) return;
+
+    const unsub = subscribeProfile(currentUid, (p) => {
+      setBio(p?.bio ?? '');
+    });
+
+    return unsub;
+  }, [open, profile?.uid]);
+
   if (!open) return null;
 
   const handleSave = async () => {
-    // 验证当前登录用户
     const currentUid = auth.currentUser?.uid;
     if (!profile?.uid || !currentUid) {
       show('❌ Not authenticated. Please log in again.', 'error', 2000);
       return;
     }
 
-    // 防止用户更改他人资料（串号检查）
+    // 防止用户更改他人资料
     if (currentUid !== profile.uid) {
       show('❌ You can only edit your own profile.', 'error', 2000);
       return;
@@ -43,20 +56,7 @@ export default function ProfileModal({
 
     setSaving(true);
     try {
-      const bioClean = (bio ?? '').trim();
-      
-      // ✅ 持久化到 Firebase RTDB，使用 update 保留其他字段
-      await update(ref(db, `/profiles/${profile.uid}`), {
-        bio: bioClean,
-        bioUpdatedAt: Date.now()
-      });
-
-      // ✅ 验证保存成功
-      const snap = await get(ref(db, `/profiles/${profile.uid}/bio`));
-      if (!snap.exists() || snap.val() !== bioClean) {
-        throw new Error('Bio verification failed after save');
-      }
-
+      await saveBio(profile.uid, bio);
       show('✅ Profile updated successfully!', 'success', 1500);
       onClose();
     } catch (e) {
