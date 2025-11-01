@@ -1,6 +1,5 @@
-import { getDatabase, ref, onValue, update } from 'firebase/database';
-
-export const rtdb = getDatabase();
+import { ref, onValue, update } from 'firebase/database';
+import { db } from '../firebase';
 
 /**
  * Subscribe to user profile updates in real-time
@@ -9,7 +8,7 @@ export const rtdb = getDatabase();
  * @returns Unsubscribe function
  */
 export function subscribeProfile(uid: string, cb: (profile: any) => void) {
-  const r = ref(rtdb, `profiles/${uid}`);
+  const r = ref(db, `profiles/${uid}`);
   return onValue(r, (snap) => cb(snap.val() || {}));
 }
 
@@ -20,7 +19,7 @@ export function subscribeProfile(uid: string, cb: (profile: any) => void) {
  */
 export async function saveBio(uid: string, bio: string) {
   const bioClean = (bio ?? '').trim();
-  await update(ref(rtdb, `profiles/${uid}`), {
+  await update(ref(db, `profiles/${uid}`), {
     bio: bioClean,
     bioUpdatedAt: Date.now()
   });
