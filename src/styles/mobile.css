@@ -217,4 +217,46 @@
   .sidebar-brand { display: none !important; }
 }
 
+/* === Mobile-only: fix user menu dropdown position under avatar === */
+@media (max-width: 768px) {
+  :root {
+    /* 移动端 header 高度 */
+    --header-h: 56px;
+  }
+
+  /* 头像菜单容器选择器 */
+  .user-menu,
+  .dropdown-menu,
+  [role="menu"],
+  [data-menu="user"],
+  #profileMenu {
+    position: fixed !important;
+    top: calc(env(safe-area-inset-top) + var(--header-h) + 6px) !important;
+    right: calc(env(safe-area-inset-right) + 8px) !important;
+    left: auto !important;
+    transform: none !important;
+    min-width: 180px;
+    max-width: min(92vw, 320px);
+    z-index: 70 !important;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(0,0,0,.28);
+    backdrop-filter: blur(6px);
+  }
+
+  /* 头像按钮优化 */
+  .user-avatar-btn,
+  [data-role="user-avatar"],
+  #userAvatarWrap button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 防止菜单被容器 overflow 裁掉 */
+  .layout-root,
+  body {
+    overflow-x: clip;
+  }
+}
+
 
