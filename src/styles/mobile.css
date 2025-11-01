@@ -1,5 +1,10 @@
 /* Mobile-only layout adjustments */
 @media (max-width: 767px) {
+  /* 使用 100svh 替代 100vh 以适配 iOS 键盘 */
+  div.h-\[100svh\] {
+    height: 100svh !important;
+    height: 100dvh;
+  }
   /* 让 Header 在手机端用 flex 重排（不改 JSX）*/
   .app-header {
     height: 48px;

@@ -27,6 +27,7 @@ import { useCurrentRoom } from '../state/currentRoom';
 import { useRooms } from '../hooks/useRooms';
 import { useOpenDM } from '@/hooks/useOpenDM';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
+import { useKeyboardOffset } from '../hooks/useKeyboardOffset';
 import { startRoomCleanupScheduler } from '../utils/roomCleanup';
 import '../utils/testRoomCleanup'; // 导入测试工具
 import '../utils/fixRoomCreatorInfo'; // 导入修复工具
@@ -718,6 +719,7 @@ export default function Home() {
   const [stickToBottom, setStickToBottom] = useState(true);
   const [composerHeight, setComposerHeight] = useState(64);
   useKeyboardInset();
+  useKeyboardOffset();
   const padBottom = useMemo(() => `calc(${composerHeight}px + var(--kb, 0px) + var(--sab, 0px) + 12px)`, [composerHeight]);
   const welcomeShownRef = useRef(false);
 
@@ -1068,7 +1070,7 @@ export default function Home() {
   const isRoomOwner = currentRoom && currentRoom.ownerId === uid;
 
   return (
-    <div className="h-screen w-full text-white relative overflow-hidden flex flex-col">
+    <div className="h-[100svh] w-full text-white relative overflow-hidden flex flex-col">
       <Header
         unreadTotal={inboxUnreadCount}
         onToggleInbox={() => {}}
@@ -1426,6 +1428,9 @@ export default function Home() {
             id="input-bar"
             ref={composerWrapRef}
             className="sticky bottom-0 z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 px-3 py-3"
+            style={{
+              paddingBottom: `max(12px, env(safe-area-inset-bottom), var(--kb-offset, 0px))`
+            }}
           >
             <Composer
               ref={composerControlRef}
