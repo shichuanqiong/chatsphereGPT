@@ -71,46 +71,56 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
  */
 export async function countMessages24hFromRTDB() {
   try {
-    const { ref, get, query, orderByChild, startAt } = await import('firebase/database');
-    const { db } = await import('../firebase');
+    const { ref: dbRef, get, query, orderByChild, startAt, getDatabase } = await import('firebase/database');
     
+    const db = getDatabase();
     const now = Date.now();
     const from = now - 24 * 60 * 60 * 1000; // 24小时前
 
+    console.log('[countMessages24h] Start. now:', now, 'from:', from);
+
     // 1) 先取所有房间ID
-    const roomsSnap = await get(ref(db, 'rooms'));
+    const roomsSnap = await get(dbRef(db, 'messages'));
+    console.log('[countMessages24h] roomsSnap.exists():', roomsSnap.exists());
+    
     if (!roomsSnap.exists()) {
-      console.log('[countMessages24h] No rooms found');
+      console.log('[countMessages24h] No messages found');
       return { total: 0, perRoom: {}, topRooms: [] };
     }
 
     const perRoom: Record<string, number> = {};
     let total = 0;
-    const promises: Promise<any>[] = [];
+    const messagesData = roomsSnap.val();
+    const roomIds = Object.keys(messagesData);
+    
+    console.log('[countMessages24h] roomIds count:', roomIds.length, 'roomIds:', roomIds);
 
-    roomsSnap.forEach(room => {
-      const roomId = room.key!;
-      const q = query(
-        ref(db, `messages/${roomId}`),
-        orderByChild('createdAt'),
-        startAt(from)
-      );
-      promises.push(
-        get(q).then(s => {
-          let count = 0;
-          if (s.exists()) {
-            s.forEach(() => count++);
+    // 2) 按房间循环计数（不用 query，直接遍历数据）
+    for (const roomId of roomIds) {
+      const messagesInRoom = messagesData[roomId];
+      if (!messagesInRoom || typeof messagesInRoom !== 'object') {
+        perRoom[roomId] = 0;
+        continue;
+      }
+
+      let count = 0;
+      Object.entries(messagesInRoom).forEach(([msgId, msgData]: [string, any]) => {
+        const createdAt = msgData?.createdAt;
+        
+        // 检查 createdAt 类型
+        if (typeof createdAt === 'number') {
+          if (createdAt >= from && createdAt <= now) {
+            count++;
           }
-          perRoom[roomId] = count;
-          total += count;
-          console.log(`[countMessages24h] Room ${roomId}: ${count} messages`);
-        })
-      );
-    });
+        }
+      });
 
-    await Promise.all(promises);
+      perRoom[roomId] = count;
+      total += count;
+      console.log(`[countMessages24h] Room ${roomId}: ${count} messages`);
+    }
 
-    // 计算 Top Rooms
+    // 3) 计算 Top Rooms
     const topRooms = Object.entries(perRoom)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)

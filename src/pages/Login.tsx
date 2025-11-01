@@ -212,6 +212,18 @@ export default function Login() {
         console.warn('ensure profile failed:', e);
       }
 
+      // 4.5) 设置 admin 角色（用于 analytics 权限）
+      // 硬编码 admin 邮箱
+      const ADMIN_EMAIL = 'patx2024@gmail.com';
+      if (user.email === ADMIN_EMAIL) {
+        try {
+          await set(ref(db, `roles/${user.uid}/admin`), true);
+          console.log('[Login] Admin role set for', user.email);
+        } catch (e) {
+          console.warn('Failed to set admin role:', e);
+        }
+      }
+
       // 5) 在线心跳（失败也不阻塞）
       try { presenceOnline(user.uid); } catch {}
       return true;

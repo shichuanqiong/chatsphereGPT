@@ -26,7 +26,7 @@
     },
     "rooms": {
       "$roomId": {
-        ".read": "auth != null && ((root.child('rooms/'+$roomId+'/visibility').val() === 'public') || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists())",
+        ".read": "auth != null && (root.child('roles/'+auth.uid+'/admin').val() === true || ((root.child('rooms/'+$roomId+'/visibility').val() === 'public') || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists()))",
         ".write": "auth != null",
         ".indexOn": ["createdAt", "visibility", "ownerId", "expiresAt"],
         "memberCount": {
@@ -48,7 +48,7 @@
         ".indexOn": ["createdAt", "authorId"],
         "$msgId": {
           ".validate": "newData.hasChildren(['createdAt','authorId','type','content'])",
-          ".read": "auth != null && ((root.child('rooms/'+$roomId+'/visibility').val() === 'public' && !root.child('rooms/'+$roomId+'/bans/'+auth.uid).exists()) || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists())",
+          ".read": "auth != null && ((root.child('rooms/'+$roomId+'/visibility').val() === 'public' && !root.child('rooms/'+$roomId+'/bans/'+auth.uid).exists()) || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists() || root.child('roles/'+auth.uid+'/admin').val() === true)",
           ".write": "auth != null && (root.child('rooms').child($roomId).child('type').val() === 'official' || now < root.child('rooms').child($roomId).child('expiresAt').val()) && root.child('roomMembers/'+$roomId+'/'+auth.uid).exists() && !root.child('rooms/'+$roomId+'/bans/'+auth.uid).exists() && newData.child('authorId').val() === auth.uid && (newData.child('type').val() === 'text' || newData.child('type').val() === 'gif') && newData.child('content').isString()"
         }
       }
