@@ -4,7 +4,7 @@
     ".write": false,
     "profiles": {
       "$uid": {
-        ".read": "$uid === auth.uid",
+        ".read": "auth != null",
         ".write": "$uid === auth.uid",
         "bio": {
           ".validate": "newData.isString() && newData.val().length <= 500"
@@ -45,12 +45,20 @@
     },
     "messages": {
       "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
         ".indexOn": ["createdAt", "authorId"],
         "$msgId": {
           ".validate": "newData.hasChildren(['createdAt','authorId','type','content'])",
           ".read": "auth != null && ((root.child('rooms/'+$roomId+'/visibility').val() === 'public' && !root.child('rooms/'+$roomId+'/bans/'+auth.uid).exists()) || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists() || root.child('roles/'+auth.uid+'/admin').val() === true)",
           ".write": "auth != null && (root.child('rooms').child($roomId).child('type').val() === 'official' || now < root.child('rooms').child($roomId).child('expiresAt').val()) && root.child('roomMembers/'+$roomId+'/'+auth.uid).exists() && !root.child('rooms/'+$roomId+'/bans/'+auth.uid).exists() && newData.child('authorId').val() === auth.uid && (newData.child('type').val() === 'text' || newData.child('type').val() === 'gif') && newData.child('content').isString()"
         }
+      }
+    },
+    "profilesStats": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     },
     "dmMessages": {
