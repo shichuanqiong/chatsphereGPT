@@ -118,44 +118,20 @@ app.get('/admin/metrics/top-rooms', async (_req: Request, res: Response) => {
   }
 });
 
-// 4) 用户列表（来自 RTDB /profiles）
+// 4) 用户列表（来自 RTDB /profiles 和 /profilesStats）
 app.get('/admin/users', async (_req: Request, res: Response) => {
   try {
-    // ★ Force redeploy: v2
-    // ★ 修复：从 RTDB 的 /profiles 路径读取用户（不是 Firestore collection）
+    // 获取用户基础信息
     const profilesSnap = await rtdb.ref('/profiles').get();
     const profilesData = profilesSnap.val() || {};
+    
+    // 获取用户统计信息（messageCount、lastMessageAt）
+    const statsSnap = await rtdb.ref('/profilesStats').get();
+    const statsData = statsSnap.val() || {};
     
     // 同时获取在线状态
     const presenceSnap = await rtdb.ref('/presence').get();
     const presenceData = presenceSnap.val() || {};
-    
-    // 获取房间列表，然后分批查询每个房间的消息
-    const roomsSnap = await rtdb.ref('/rooms').get();
-    const roomsData = roomsSnap.val() || {};
-    const userMessageCount: Record<string, number> = {};
-    
-    // 分批遍历每个房间，查询消息并统计用户消息数
-    const roomIds = Object.keys(roomsData);
-    for (const roomId of roomIds) {
-      try {
-        const roomMessagesSnap = await rtdb.ref(`/messages/${roomId}`).get();
-        if (!roomMessagesSnap.exists()) continue;
-        
-        const roomMessages = roomMessagesSnap.val();
-        if (!roomMessages || typeof roomMessages !== 'object') continue;
-        
-        Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
-          const authorId = msg?.authorId;
-          if (authorId && typeof authorId === 'string') {
-            userMessageCount[authorId] = (userMessageCount[authorId] || 0) + 1;
-          }
-        });
-      } catch (err) {
-        console.warn(`[admin/users] Failed to fetch messages for room ${roomId}:`, err);
-        continue;
-      }
-    }
     
     const now = Date.now();
     const timeout = 60 * 1000;
@@ -165,19 +141,25 @@ app.get('/admin/users', async (_req: Request, res: Response) => {
       const lastSeen = presence?.lastSeen ?? 0;
       const isOnline = presence?.state === 'online' && now - lastSeen < timeout;
       
+      // 从 profilesStats 读取统计数据
+      const stats = statsData[uid] || {};
+      
       return {
         uid,
         name: data.nickname || data.displayName || data.name || '未知用户',
         email: data.email || '',
         status: isOnline ? 'online' : 'offline',
-        messageCount: userMessageCount[uid] || 0,
+        messageCount: stats.messageCount ?? 0,
+        lastMessageAt: stats.lastMessageAt ?? null,
         createdAt: data.createdAt,
         lastSeen: presence?.lastSeen,
       };
     });
     
+    console.log(`[admin/users] Returned ${users.length} users with stats from profilesStats`);
     res.json({ users });
   } catch (err: any) {
+    console.error('[admin/users] Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
