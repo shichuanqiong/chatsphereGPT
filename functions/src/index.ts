@@ -585,23 +585,42 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
   { schedule: '5 0 * * *', timeZone: 'UTC' },
   async () => {
     try {
-      const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const now = Date.now();
+      const yesterday = new Date(now - 24 * 60 * 60 * 1000);
       const dateStr = yesterday.toISOString().split('T')[0]; // yyyy-mm-dd
 
-      // 昨天的消息
-      const messagesSnap = await db
-        .collection('messages')
-        .where('ts', '>=', admin.firestore.Timestamp.fromDate(yesterday))
-        .where('ts', '<', admin.firestore.Timestamp.fromDate(now))
-        .get();
+      // 从 RTDB /messages 读取消息（不是 Firestore）
+      const messagesSnap = await rtdb.ref('/messages').get();
+      if (!messagesSnap.exists()) {
+        console.log(`[DAU] No messages found for ${dateStr}, dau=0`);
+        await db.doc('metrics/runtime').set(
+          { dau: 0, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+        return;
+      }
 
+      const messagesData = messagesSnap.val();
       const uniqueUsers = new Set<string>();
-      messagesSnap.forEach((doc) => {
-        const data = doc.data();
-        if (data.userId) {
-          uniqueUsers.add(data.userId);
-        }
+      const oneDayAgo = yesterday.getTime();
+      const endTime = new Date().getTime();
+
+      // 遍历所有房间的消息
+      Object.entries(messagesData).forEach(([roomId, roomMessages]: [string, any]) => {
+        if (!roomMessages || typeof roomMessages !== 'object') return;
+
+        Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
+          const createdAt = msg?.createdAt;
+          const authorId = msg?.authorId;
+
+          // 检查时间戳类型和范围（24小时内）
+          if (typeof createdAt === 'number' && createdAt >= oneDayAgo && createdAt <= endTime) {
+            // 检查用户 ID
+            if (authorId && typeof authorId === 'string') {
+              uniqueUsers.add(authorId);
+            }
+          }
+        });
       });
 
       const dau = uniqueUsers.size;
@@ -615,7 +634,7 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
         { merge: true }
       );
 
-      console.log(`✓ DAU calculated for ${dateStr}: ${dau}`);
+      console.log(`✓ DAU calculated for ${dateStr}: ${dau} unique users`);
     } catch (err: any) {
       console.error('calculateDailyActiveUsers error:', err);
     }
