@@ -1,7 +1,7 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "false",
+    ".read": false,
+    ".write": false,
     "profiles": {
       ".indexOn": ["nickname", "email"],
       "$uid": {
@@ -121,6 +121,10 @@
           "lastSent": {}
         }
       }
+    },
+    "posts": {
+      ".read": "auth != null",
+      ".write": false
     }
   }
 }
