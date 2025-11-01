@@ -6,7 +6,13 @@
       ".indexOn": ["nickname", "email"],
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        "bio": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "bioUpdatedAt": {
+          ".validate": "newData.isNumber()"
+        }
       }
     },
     "nicknameIndex": {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ref, update } from 'firebase/database';
-import { db } from '../firebase';
+import { ref, update, get } from 'firebase/database';
+import { auth, db } from '../firebase';
+import { useToast } from './Toast';
 
 type Profile = {
   uid: string;
@@ -21,16 +22,48 @@ export default function ProfileModal({
   profile?: Profile | null;
 }) {
   const [bio, setBio] = useState(profile?.bio || '');
+  const [saving, setSaving] = useState(false);
+  const { show } = useToast();
 
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!profile?.uid) return;
+    // 验证当前登录用户
+    const currentUid = auth.currentUser?.uid;
+    if (!profile?.uid || !currentUid) {
+      show('❌ Not authenticated. Please log in again.', 'error', 2000);
+      return;
+    }
+
+    // 防止用户更改他人资料（串号检查）
+    if (currentUid !== profile.uid) {
+      show('❌ You can only edit your own profile.', 'error', 2000);
+      return;
+    }
+
+    setSaving(true);
     try {
-      await update(ref(db, `/profiles/${profile.uid}`), { bio });
+      const bioClean = (bio ?? '').trim();
+      
+      // ✅ 持久化到 Firebase RTDB，使用 update 保留其他字段
+      await update(ref(db, `/profiles/${profile.uid}`), {
+        bio: bioClean,
+        bioUpdatedAt: Date.now()
+      });
+
+      // ✅ 验证保存成功
+      const snap = await get(ref(db, `/profiles/${profile.uid}/bio`));
+      if (!snap.exists() || snap.val() !== bioClean) {
+        throw new Error('Bio verification failed after save');
+      }
+
+      show('✅ Profile updated successfully!', 'success', 1500);
       onClose();
     } catch (e) {
       console.error('Failed to update bio:', e);
+      show('❌ Failed to save profile. Please try again.', 'error', 2000);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -81,23 +114,28 @@ export default function ProfileModal({
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell us about yourself..."
-                className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 text-white border border-white/10 focus:border-white/30 outline-none resize-none"
+                maxLength={500}
+                disabled={saving}
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 text-white border border-white/10 focus:border-white/30 outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 rows={4}
               />
+              <div className="mt-1 text-xs text-white/50">{bio.length}/500</div>
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
                 onClick={onClose}
-                className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                disabled={saving}
+                className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 transition-all text-white font-semibold"
+                disabled={saving}
+                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 transition-all text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Save
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
