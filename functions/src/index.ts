@@ -119,6 +119,7 @@ app.get('/admin/metrics/top-rooms', async (_req: Request, res: Response) => {
 // 4) 用户列表（来自 RTDB /profiles）
 app.get('/admin/users', async (_req: Request, res: Response) => {
   try {
+    // ★ Force redeploy: v2
     // ★ 修复：从 RTDB 的 /profiles 路径读取用户（不是 Firestore collection）
     const profilesSnap = await rtdb.ref('/profiles').get();
     const profilesData = profilesSnap.val() || {};
