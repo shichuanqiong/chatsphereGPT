@@ -446,7 +446,7 @@ export default function AdminDashboard() {
           <div className="ml-auto flex items-center gap-3">
             <div className="text-xs text-zinc-400 hidden md:block">Owner</div>
             <div className="h-8 w-8 rounded-full bg-white/10 border border-white/10 flex items-center justify-center">🛡️</div>
-            <a href="/#/home">
+            <a href="/chatsphereGPT/#/home">
               <Button className="!px-2" title="Back to Chat"><LogOut className="h-5 w-5"/></Button>
             </a>
           </div>
