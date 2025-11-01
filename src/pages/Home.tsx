@@ -28,6 +28,7 @@ import { useRooms } from '../hooks/useRooms';
 import { useOpenDM } from '@/hooks/useOpenDM';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useKeyboardOffset } from '../hooks/useKeyboardOffset';
+import { useIOSKeyboardVar } from '../hooks/useIOSKeyboard';
 import { startRoomCleanupScheduler } from '../utils/roomCleanup';
 import '../utils/testRoomCleanup'; // 导入测试工具
 import '../utils/fixRoomCreatorInfo'; // 导入修复工具
@@ -720,6 +721,7 @@ export default function Home() {
   const [composerHeight, setComposerHeight] = useState(64);
   useKeyboardInset();
   useKeyboardOffset();
+  useIOSKeyboardVar();
   const padBottom = useMemo(() => `calc(${composerHeight}px + var(--kb, 0px) + var(--sab, 0px) + 12px)`, [composerHeight]);
   const welcomeShownRef = useRef(false);
 
@@ -1427,7 +1429,7 @@ export default function Home() {
           <div
             id="input-bar"
             ref={composerWrapRef}
-            className="sticky bottom-0 z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 px-3 py-3"
+            className="chat-input-bar sticky bottom-0 z-10 bg-black/40 backdrop-blur-xl border-t border-white/10 px-3 py-3"
             style={{
               paddingBottom: `max(12px, env(safe-area-inset-bottom), var(--kb-offset, 0px))`
             }}

@@ -1,10 +1,53 @@
-/* Mobile-only layout adjustments */
+/* ========== iOS 键盘防抖 ========== */
 @media (max-width: 767px) {
-  /* 使用 100svh 替代 100vh 以适配 iOS 键盘 */
-  div.h-\[100svh\] {
-    height: 100svh !important;
-    height: 100dvh;
+  :root {
+    --kb: 0px;                           /* JS 动态写入的键盘高度 */
+    --composer-h: 64px;                  /* 输入栏实际高度 */
+    --safe: env(safe-area-inset-bottom); /* iPhone 底部安全区 */
   }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior-y: contain; /* 禁止回弹把布局挤飞 */
+  }
+
+  /* 让聊天滚动区占满"视觉视口"，避免 100vh 引起的跳动 */
+  .chat-scroll {
+    height: 100svh;                 /* 现代浏览器用 svh；iOS 16+ 好用 */
+    max-height: 100svh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--composer-h) + var(--safe));
+    scroll-behavior: smooth;
+  }
+
+  /* 输入栏固定贴底，避开键盘与安全区 */
+  .chat-input-bar {
+    position: sticky;               /* sticky 比 fixed 更稳定 */
+    bottom: 0;
+    z-index: 30;
+    transform: translateZ(0);       /* 触发复合层，减少 iOS 抖动 */
+    padding-bottom: var(--safe);
+    margin-bottom: var(--kb);       /* 当键盘弹起时，动态抬升 */
+  }
+
+  /* 若某些父元素带 transform/overflow 会让 sticky 失效，强制修复 */
+  .chat-scroll,
+  #chat-scroll,
+  #app-shell,
+  #app-shell > div {
+    transform: none !important;
+    overflow-y: auto !important;
+    contain: none !important;
+  }
+
+  /* 防止输入时 Safari 自动缩放（需保证字体 >=16px） */
+  .chat-input-bar input,
+  .chat-input-bar textarea {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+  }
+
   /* 让 Header 在手机端用 flex 重排（不改 JSX）*/
   .app-header {
     height: 48px;
@@ -134,33 +177,11 @@
     min-height: 0;
   }
 
-  /* 聊天主体：给输入条留出空间 */
-  #chat-main {
-    flex: 1;
-    min-height: 0;
-    padding-bottom: 64px;
-    overflow-y: auto;
-  }
-
   /* 消息滚动区 */
   #chat-scroll {
     max-height: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-  }
-
-  /* 底部输入固定到底部 */
-  #input-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(max(var(--kb, 0px), var(--kb-bottom, 0px)) + max(8px, var(--sab, 0px)));
-    z-index: 41;
-    padding: max(6px, env(safe-area-inset-bottom) / 2) 10px 8px;
-    background: rgba(16,16,16,0.9);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(255,255,255,0.08);
-    transition: bottom 0.18s ease, padding-bottom 0.18s ease;
   }
 
   /* Emoji 面板：靠右悬浮 */
