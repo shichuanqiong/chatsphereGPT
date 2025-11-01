@@ -9,7 +9,9 @@ export default {
     }
   }, 
   safelist: [
-    { pattern: /^w-\[300px\]$/ },
+    { pattern: /^w-\[\d+px\]$/ },
+    "w-[300px]",
+    "w-rail",
   ],
   plugins:[] 
 }

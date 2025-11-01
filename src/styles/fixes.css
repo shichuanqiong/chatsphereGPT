@@ -28,3 +28,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* FriendRow 用户信息行保险规则 */
+.user-row {
+  display: flex;
+  align-items: center;
+}
+
+.user-row .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

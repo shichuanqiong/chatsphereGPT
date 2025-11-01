@@ -136,9 +136,9 @@ export function FriendRow({
               title={isOnline ? 'Online' : 'Offline'}
             />
           </div>
-          <div className="leading-tight">
-            <div className="font-medium text-sm">{user.nickname}</div>
-            <div className="text-[11px] text-white/60">
+          <div className="leading-tight flex-1 min-w-0">
+            <div className="font-medium text-sm truncate">{user.nickname}</div>
+            <div className="text-[11px] text-white/60 truncate">
               {user.age ?? '--'} · {user.gender ?? '--'} · {user.country ?? '--'}
             </div>
           </div>
