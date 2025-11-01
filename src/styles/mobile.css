@@ -279,4 +279,10 @@
   }
 }
 
+/* === Mobile-only: Avatar menu button styling safeguards === */
+@media (max-width: 767px) {
+  .avatar-menu { border-radius: 16px; background: rgba(0,0,0,.8); backdrop-filter: blur(10px); }
+  .avatar-menu .menu-btn { border-radius: 12px; }
+}
+
 
