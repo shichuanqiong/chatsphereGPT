@@ -31,6 +31,7 @@ import { useAnalyticsStream, useAdminUsers, useAdminRooms, useAdminReports } fro
 import AdminAPI from "@/lib/api";
 import { db } from "@/firebase";
 import { ref, onValue, push, set, remove, update } from "firebase/database";
+import { countMessages24hFromRTDB } from "@/lib/api";
 
 // ChatSphere — Admin Dashboard v0.2
 // ▸ 深蓝 + 青紫色系  ▸ 折叠侧栏  ▸ 顶部导航  ▸ 渐变标题  ▸ Recharts 折线图
@@ -209,6 +210,42 @@ export default function AdminDashboard() {
 
   // 实时分析数据
   const { data: liveMetrics, connected: metricsConnected } = useAnalyticsStream();
+  
+  // 从 RTDB 直接查询的消息统计（快速修）
+  const [rtdbMetrics, setRtdbMetrics] = useState<{ total: number; topRooms: Array<{ name: string; count: number }> }>({ total: 0, topRooms: [] });
+  const [loadingRtdbMetrics, setLoadingRtdbMetrics] = useState(true);
+
+  // 定期刷新 RTDB 消息统计（每 30 秒）
+  useEffect(() => {
+    let isMounted = true;
+    
+    const refreshRtdbMetrics = async () => {
+      setLoadingRtdbMetrics(true);
+      try {
+        const result = await countMessages24hFromRTDB();
+        if (isMounted) {
+          setRtdbMetrics(result);
+        }
+      } catch (err) {
+        console.error('[Admin] Failed to refresh RTDB metrics:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingRtdbMetrics(false);
+        }
+      }
+    };
+
+    // 立即执行一次
+    refreshRtdbMetrics();
+
+    // 然后每 30 秒刷新一次
+    const interval = setInterval(refreshRtdbMetrics, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
   
   // 用户和房间实时数据
   const { users: fetchedUsers, loading: usersLoading, refetch: refetchUsers } = useAdminUsers();
@@ -503,7 +540,7 @@ export default function AdminDashboard() {
                 <p className="text-zinc-400 mt-1">System overview and key metrics</p>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
                   <Stat title="Online now" value={String(users.filter(u => u.status === 'online').length)} />
-                  <Stat title="Messages (24h)" value={String(liveMetrics?.msg24h ?? 0)} />
+                  <Stat title="Messages (24h)" value={String(rtdbMetrics.total ?? 0)} />
                   <Stat title="DAU" value={String(liveMetrics?.dau ?? 0)} />
                   <Stat title="Total Users" value={String(users.length)} />
                   <Stat title="Active Rooms" value={String(allRooms.length)} />
@@ -784,7 +821,7 @@ export default function AdminDashboard() {
                 <p className="text-zinc-400 mt-1">Activity and engagement metrics {metricsConnected && '🟢'}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <Stat title="Online now" value={String(users.filter(u => u.status === 'online').length)} />
-                  <Stat title="Messages (24h)" value={String(liveMetrics?.msg24h ?? 0)} />
+                  <Stat title="Messages (24h)" value={String(rtdbMetrics.total ?? 0)} />
                   <Stat title="DAU" value={String(liveMetrics?.dau ?? 0)} />
                 </div>
                 <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -826,7 +863,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="mt-4 text-zinc-300 border-t border-white/10 pt-4">
                         <div className="text-sm text-zinc-400 mb-3">💬 Top Rooms</div>
-                        {(liveMetrics?.topRooms || []).slice(0, 3).map((room, idx) => (
+                        {(rtdbMetrics.topRooms || []).slice(0, 3).map((room, idx) => (
                           <div key={idx} className="mb-2">
                             {idx === 0 && '🥇'}{idx === 1 && '🥈'}{idx === 2 && '🥉'} <b>{room.name}</b> — <span className="text-cyan-300">{room.count}</span>
                           </div>

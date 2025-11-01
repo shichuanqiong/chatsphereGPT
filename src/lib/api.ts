@@ -66,6 +66,65 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 /**
+ * Direct RTDB message counting (per-room iteration)
+ * 快速修：按房间循环统计 24 小时内的消息
+ */
+export async function countMessages24hFromRTDB() {
+  try {
+    const { ref, get, query, orderByChild, startAt } = await import('firebase/database');
+    const { db } = await import('../firebase');
+    
+    const now = Date.now();
+    const from = now - 24 * 60 * 60 * 1000; // 24小时前
+
+    // 1) 先取所有房间ID
+    const roomsSnap = await get(ref(db, 'rooms'));
+    if (!roomsSnap.exists()) {
+      console.log('[countMessages24h] No rooms found');
+      return { total: 0, perRoom: {}, topRooms: [] };
+    }
+
+    const perRoom: Record<string, number> = {};
+    let total = 0;
+    const promises: Promise<any>[] = [];
+
+    roomsSnap.forEach(room => {
+      const roomId = room.key!;
+      const q = query(
+        ref(db, `messages/${roomId}`),
+        orderByChild('createdAt'),
+        startAt(from)
+      );
+      promises.push(
+        get(q).then(s => {
+          let count = 0;
+          if (s.exists()) {
+            s.forEach(() => count++);
+          }
+          perRoom[roomId] = count;
+          total += count;
+          console.log(`[countMessages24h] Room ${roomId}: ${count} messages`);
+        })
+      );
+    });
+
+    await Promise.all(promises);
+
+    // 计算 Top Rooms
+    const topRooms = Object.entries(perRoom)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([roomId, count]) => ({ name: roomId, count }));
+
+    console.log(`[countMessages24h] Total: ${total}, TopRooms:`, topRooms);
+    return { total, perRoom, topRooms };
+  } catch (err: any) {
+    console.error('[countMessages24h] Error:', err);
+    return { total: 0, perRoom: {}, topRooms: [] };
+  }
+}
+
+/**
  * Admin API endpoints
  */
 export const AdminAPI = {
