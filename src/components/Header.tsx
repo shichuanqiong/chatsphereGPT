@@ -180,14 +180,14 @@ export default function Header({
               {menuOpen && (
                 <div
                   id="profileMenu"
-                  className="avatar-menu absolute right-0 top-[calc(100%+8px)] z-[60] w-[240px] rounded-2xl bg-black/80 backdrop-blur-md shadow-xl border border-white/10 p-2 select-none"
+                  className="avatar-menu absolute right-0 top-[calc(100%+8px)] z-[60] w-[280px] rounded-2xl bg-black/80 backdrop-blur-md shadow-xl border border-white/10 p-3 select-none"
                   onMouseEnter={openMenuHover}
                   onMouseLeave={scheduleCloseMenu}
                 >
-                  {/* 第一行：Edit / Profile 横排 */}
-                  <div className="flex gap-2 mb-1">
+                  {/* 第一行：Edit / Profile 居中且更紧凑 */}
+                  <div className="grid grid-cols-2 gap-2 mb-2 place-items-center">
                     <button
-                      className="menu-btn grow px-3 py-2 rounded-xl text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors"
+                      className="menu-btn w-full px-3 py-2 rounded-xl text-white/90 text-center hover:bg-white/10 active:bg-white/15 transition-colors"
                       onClick={() => {
                         setMenuOpen(false);
                         setOpenProfile(true);
@@ -196,7 +196,7 @@ export default function Header({
                       {isGuest ? 'View' : 'Edit'}
                     </button>
                     <button
-                      className="menu-btn grow px-3 py-2 rounded-xl text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors"
+                      className="menu-btn w-full px-3 py-2 rounded-xl text-white/90 text-center hover:bg-white/10 active:bg-white/15 transition-colors"
                       onClick={() => {
                         setMenuOpen(false);
                         setOpenProfile(true);
@@ -205,13 +205,13 @@ export default function Header({
                       Profile
                     </button>
                   </div>
-                  
-                  {/* 分隔线 */}
+
+                  {/* 分隔线更细更紧凑 */}
                   <div className="h-px my-1 bg-white/10" />
-                  
-                  {/* 第二行：Logout 独占一行 */}
+
+                  {/* 第二行：Logout 居中 */}
                   <button
-                    className="menu-btn w-full px-3 py-2 rounded-xl text-red-300 hover:bg-red-300/10 active:bg-red-300/15 transition-colors"
+                    className="menu-btn w-[65%] mx-auto block px-3 py-2 rounded-xl text-red-300 text-center hover:bg-red-300/10 active:bg-red-300/15 transition-colors"
                     onClick={() => {
                       setMenuOpen(false);
                       onLogout();
