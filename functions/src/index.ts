@@ -493,33 +493,42 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
       const now = Date.now();
       const oneDayAgo = now - 24 * 60 * 60 * 1000;
 
-      // 1) 聚合消息数量 & 分桶 & 热门房间
-      const messagesSnap = await db
-        .collection('messages')
-        .where('ts', '>=', admin.firestore.Timestamp.fromMillis(oneDayAgo))
-        .get();
+      // ★ 修复：从 RTDB /messages 读取消息而不是 Firestore
+      const messagesSnap = await rtdb.ref('/messages').get();
+      const messagesData = messagesSnap.val() || {};
 
       let msg24h = 0;
       const buckets: { h: number; c: number }[] = Array.from({ length: 24 }, (_, i) => ({ h: i, c: 0 }));
       const roomCounts: Record<string, number> = {};
 
-      messagesSnap.forEach((doc) => {
-        msg24h++;
-        const data = doc.data();
-        const ts = (data.ts as admin.firestore.Timestamp).toMillis();
-        const hour = new Date(ts).getHours();
-        buckets[hour]!.c++;
+      // 遍历所有房间的消息
+      Object.entries(messagesData).forEach(([roomId, messages]: [string, any]) => {
+        if (!messages || typeof messages !== 'object') return;
 
-        if (data.roomId) {
-          roomCounts[data.roomId] = (roomCounts[data.roomId] ?? 0) + 1;
-        }
+        Object.entries(messages).forEach(([_, msg]: [string, any]) => {
+          const msgTime = msg.createdAt || 0;
+          
+          // 只计算 24 小时内的消息
+          if (msgTime >= oneDayAgo && msgTime <= now) {
+            msg24h++;
+            
+            // 分桶统计（按小时）
+            const hour = new Date(msgTime).getHours();
+            if (buckets[hour]) {
+              buckets[hour].c++;
+            }
+            
+            // 房间消息数统计
+            roomCounts[roomId] = (roomCounts[roomId] ?? 0) + 1;
+          }
+        });
       });
 
       // 排序热门房间（取前 3）
       const topRooms = Object.entries(roomCounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3)
-        .map(([roomId, count]) => ({ name: roomId, count })); // 可后续加房间名
+        .map(([roomId, count]) => ({ name: roomId, count }));
 
       // 2) 写入 metrics/runtime
       await db.doc('metrics/runtime').set(
