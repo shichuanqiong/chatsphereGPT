@@ -110,7 +110,7 @@ export default function Header({
           </div>
 
           {/* 右：操作区（靠右对齐） */}
-          <div id="rightControls" className="justify-self-end flex items-center gap-2">
+          <div id="rightControls" className="header-right justify-self-end flex items-center gap-2 min-w-0">
             <div
               id="btnInbox"
               className="relative"
@@ -119,7 +119,7 @@ export default function Header({
             >
               <button
                 onClick={onToggleInbox}
-                className="h-10 px-4 rounded-full bg-white/10 hover:bg-white/20 text-sm"
+                className="h-10 px-4 rounded-full bg-white/10 hover:bg-white/20 text-sm shrink-0"
               >
                 Inbox
                 {unreadTotal > 0 && (
@@ -147,20 +147,25 @@ export default function Header({
             <button
               id="btnBell"
               onClick={toggleSound}
-              className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0"
               title={muted ? 'Unmute' : 'Mute'}
             >
               {muted ? '🔕' : '🔔'}
             </button>
 
-            {/* 用户名 */}
-            <div className="mx-1 text-sm text-white/90">
+            {/* 用户名（仅桌面端显示） */}
+            <div className="hidden md:block mx-1 text-sm text-white/90">
               {currentProfile?.nickname || 'Guest'}
             </div>
 
+            {/* 用户名（仅移动端显示，在头像左侧） */}
+            <span className="md:hidden text-sm text-white/90 max-w-[38vw] truncate whitespace-nowrap shrink">
+              {currentProfile?.nickname || 'Guest'}
+            </span>
+
             <div
               id="userAvatarWrap"
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={openMenuHover}
               onMouseLeave={scheduleCloseMenu}
             >
@@ -175,12 +180,12 @@ export default function Header({
               {menuOpen && (
                 <div
                   id="profileMenu"
-                  className="absolute right-0 mt-2 w-48 rounded-xl bg-zinc-900 border border-white/10 shadow-xl z-50"
+                  className="avatar-menu absolute right-0 top-[calc(100%+8px)] z-60 w-[220px] rounded-2xl bg-black/80 backdrop-blur-md shadow-xl border border-white/10 p-2 select-none"
                   onMouseEnter={openMenuHover}
                   onMouseLeave={scheduleCloseMenu}
                 >
                   <button
-                    className="w-full text-left px-3 py-2 hover:bg-white/10"
+                    className="menu-item w-full text-left px-3 py-2 rounded-xl text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors"
                     onClick={() => {
                       setMenuOpen(false);
                       setOpenProfile(true);
@@ -188,8 +193,9 @@ export default function Header({
                   >
                     {isGuest ? 'View Profile' : 'Edit Profile'}
                   </button>
+                  <div className="h-px my-1 bg-white/10" />
                   <button
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 border-t border-white/10"
+                    className="menu-item w-full text-left px-3 py-2 rounded-xl text-red-300 hover:bg-red-300/10 active:bg-red-300/15 transition-colors"
                     onClick={() => {
                       setMenuOpen(false);
                       onLogout();

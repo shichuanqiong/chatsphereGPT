@@ -259,4 +259,24 @@
   }
 }
 
+/* === Mobile-only: Avatar menu styling & header truncation safeguards === */
+@media (max-width: 768px) {
+  /* 头像菜单：风格统一（若 JSX 未加够类，可用这些兜底） */
+  .avatar-menu {
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+  }
+
+  .avatar-menu .menu-item {
+    padding: 10px 14px;
+    border-radius: 12px;
+  }
+
+  /* 防止右侧容器被挤压，导致用户名不显示或不截断 */
+  .header-right {
+    min-width: 0;
+  }
+}
+
 
