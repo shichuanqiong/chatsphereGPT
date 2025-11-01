@@ -526,12 +526,14 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
           if (msgTime >= oneDayAgo && msgTime <= now) {
             msg24h++;
             
-            // 分桶统计（按小时，使用 UTC 而不是本地时区）
-            const utcHour = new Date(msgTime).getUTCHours();
-            if (utcHour >= 0 && utcHour < 24 && buckets[utcHour]) {
-              buckets[utcHour].c++;
+            // 分桶统计（按本地时区小时而不是UTC，匹配服务器时区 America/Los_Angeles）
+            const localDate = new Date(msgTime);
+            // 获取本地时区的小时（Pacific Time）
+            const localHour = localDate.getHours();
+            if (localHour >= 0 && localHour < 24 && buckets[localHour]) {
+              buckets[localHour].c++;
             } else {
-              console.warn(`[aggregateMetrics] Invalid hour: msgTime=${msgTime}, utcHour=${utcHour}`);
+              console.warn(`[aggregateMetrics] Invalid hour: msgTime=${msgTime}, localHour=${localHour}`);
             }
             
             // 房间消息数统计
