@@ -212,19 +212,27 @@ export default function AdminDashboard() {
   const { data: liveMetrics, connected: metricsConnected } = useAnalyticsStream();
   
   // 从 RTDB 直接查询的消息统计（快速修）
-  const [rtdbMetrics, setRtdbMetrics] = useState<{ total: number; topRooms: Array<{ name: string; count: number }> }>({ total: 0, topRooms: [] });
+  const [rtdbMetrics, setRtdbMetrics] = useState<{ total: number; topRooms: Array<{ name: string; count: number }>; dau: number }>({ total: 0, topRooms: [], dau: 0 });
   const [loadingRtdbMetrics, setLoadingRtdbMetrics] = useState(true);
 
-  // 定期刷新 RTDB 消息统计（每 30 秒）
+  // 定期刷新 RTDB 消息统计和 DAU（每 30 秒）
   useEffect(() => {
     let isMounted = true;
     
     const refreshRtdbMetrics = async () => {
       setLoadingRtdbMetrics(true);
       try {
-        const result = await countMessages24hFromRTDB();
+        const { calculateDAUFromRTDB } = await import("@/lib/api");
+        const [msgResult, dauResult] = await Promise.all([
+          countMessages24hFromRTDB(),
+          calculateDAUFromRTDB()
+        ]);
         if (isMounted) {
-          setRtdbMetrics(result);
+          setRtdbMetrics({
+            total: msgResult.total,
+            topRooms: msgResult.topRooms,
+            dau: dauResult
+          });
         }
       } catch (err) {
         console.error('[Admin] Failed to refresh RTDB metrics:', err);
@@ -541,7 +549,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
                   <Stat title="Online now" value={String(users.filter(u => u.status === 'online').length)} />
                   <Stat title="Messages (24h)" value={String(rtdbMetrics.total ?? 0)} />
-                  <Stat title="DAU" value={String(liveMetrics?.dau ?? 0)} />
+                  <Stat title="DAU" value={String(rtdbMetrics.dau ?? 0)} />
                   <Stat title="Total Users" value={String(users.length)} />
                   <Stat title="Active Rooms" value={String(allRooms.length)} />
                 </div>
@@ -822,7 +830,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <Stat title="Online now" value={String(users.filter(u => u.status === 'online').length)} />
                   <Stat title="Messages (24h)" value={String(rtdbMetrics.total ?? 0)} />
-                  <Stat title="DAU" value={String(liveMetrics?.dau ?? 0)} />
+                  <Stat title="DAU" value={String(rtdbMetrics.dau ?? 0)} />
                 </div>
                 <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <Card>

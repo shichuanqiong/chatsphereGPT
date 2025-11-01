@@ -145,6 +145,54 @@ export async function countMessages24hFromRTDB() {
 }
 
 /**
+ * Calculate Daily Active Users (DAU) in real-time from RTDB
+ * Counts unique users who sent messages in the last 24 hours
+ */
+export async function calculateDAUFromRTDB() {
+  try {
+    const { ref: dbRef, get, getDatabase } = await import('firebase/database');
+    const db = getDatabase();
+    
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000; // 24 小时前
+
+    const messagesSnap = await get(dbRef(db, 'messages'));
+    if (!messagesSnap.exists()) {
+      console.log('[calculateDAU] No messages found, dau=0');
+      return 0;
+    }
+
+    const messagesData = messagesSnap.val();
+    const uniqueUsers = new Set<string>();
+
+    // 遍历所有房间的消息
+    Object.entries(messagesData).forEach(([roomId, roomMessages]: [string, any]) => {
+      if (!roomMessages || typeof roomMessages !== 'object') return;
+
+      Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
+        const createdAt = msg?.createdAt;
+        const authorId = msg?.authorId;
+
+        // 检查时间戳类型和范围（24小时内）
+        if (typeof createdAt === 'number' && createdAt >= oneDayAgo && createdAt <= now) {
+          // 检查用户 ID
+          if (authorId && typeof authorId === 'string') {
+            uniqueUsers.add(authorId);
+          }
+        }
+      });
+    });
+
+    const dau = uniqueUsers.size;
+    console.log(`[calculateDAU] DAU=${dau}, unique users:`, Array.from(uniqueUsers));
+    return dau;
+  } catch (err: any) {
+    console.error('[calculateDAU] Error:', err);
+    return 0;
+  }
+}
+
+/**
  * Admin API endpoints
  */
 export const AdminAPI = {
