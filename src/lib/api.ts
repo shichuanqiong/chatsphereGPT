@@ -80,17 +80,17 @@ export async function countMessages24hFromRTDB() {
     console.log('[countMessages24h] Start. now:', now, 'from:', from);
 
     // 1) 先取所有房间ID
-    const roomsSnap = await get(dbRef(db, 'messages'));
-    console.log('[countMessages24h] roomsSnap.exists():', roomsSnap.exists());
+    const messagesSnap = await get(dbRef(db, 'messages'));
+    console.log('[countMessages24h] roomsSnap.exists():', messagesSnap.exists());
     
-    if (!roomsSnap.exists()) {
+    if (!messagesSnap.exists()) {
       console.log('[countMessages24h] No messages found');
       return { total: 0, perRoom: {}, topRooms: [] };
     }
 
     const perRoom: Record<string, number> = {};
     let total = 0;
-    const messagesData = roomsSnap.val();
+    const messagesData = messagesSnap.val();
     const roomIds = Object.keys(messagesData);
     
     console.log('[countMessages24h] roomIds count:', roomIds.length, 'roomIds:', roomIds);
