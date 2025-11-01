@@ -264,6 +264,25 @@ export default function AdminDashboard() {
   const users = fetchedUsers || [];
   const allRooms = fetchedRooms || [];
 
+  // ★ 辅助函数：安全获取用户消息数
+  const getUserMessageCount = (user: any): number => {
+    // 从 API 返回的 messageCount 字段取值
+    const msgCount = user?.messageCount;
+    
+    if (typeof msgCount === 'number') {
+      return msgCount;
+    }
+    
+    // 字段不存在或类型不对，记录 warn
+    console.warn(`[Admin] User ${user?.uid} (${user?.name}) has no valid messageCount field`, {
+      messageCount: msgCount,
+      type: typeof msgCount,
+      user,
+    });
+    
+    return 0;
+  };
+
   // 过滤用户
   const filteredUsers = users
     .filter(user =>
@@ -626,7 +645,7 @@ export default function AdminDashboard() {
                             <div key={idx} className="flex justify-between items-center p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
                               <div>
                                 <p className="font-medium">{user.name}</p>
-                                <p className="text-xs text-white/60">{user.status} • {user.messageCount} msgs</p>
+                                <p className="text-xs text-white/60">{user.status} • {getUserMessageCount(user)} msgs</p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`text-xs px-2 py-1 rounded ${
