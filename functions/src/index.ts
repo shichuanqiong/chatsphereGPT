@@ -3,6 +3,7 @@ import admin from 'firebase-admin';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { onMessageCreate, onMessageDelete } from './onMessageCounters';
+import { backfillUserMsgCount } from './tools/backfillUserMsgCount';
 
 // Initialize
 admin.initializeApp();
@@ -719,5 +720,8 @@ export const api = functions.https.onRequest(app);
 
 // ★ Message Counter Maintenance Triggers
 export { onMessageCreate, onMessageDelete };
+
+// ★ One-time Backfill Script
+export { backfillUserMsgCount };
 
 console.log('[deploy] counters installed');
