@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions/v2';
 import admin from 'firebase-admin';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import { onMessageCreate, onMessageDelete } from './onMessageCounters';
 
 // Initialize
 admin.initializeApp();
@@ -715,3 +716,8 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
 
 // ============ 导出 HTTP API ============
 export const api = functions.https.onRequest(app);
+
+// ★ Message Counter Maintenance Triggers
+export { onMessageCreate, onMessageDelete };
+
+console.log('[deploy] counters installed');
