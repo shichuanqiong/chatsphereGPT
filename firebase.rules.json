@@ -121,13 +121,6 @@
           "lastSent": {}
         }
       }
-    },
-    "posts": {
-      "$postId": {
-        ".read": "auth != null",
-        ".write": "auth != null && root.child('roles').child(auth.uid).child('admin').val() === true",
-        ".indexOn": ["createdAt", "slug"]
-      }
     }
   }
 }

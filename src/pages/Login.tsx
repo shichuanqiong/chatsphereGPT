@@ -53,23 +53,18 @@ export default function Login() {
     if (adminLoggingIn) return;
     setAdminLoggingIn(true);
     try {
-      const { user } = await signInWithEmailAndPassword(auth, adminUsername, adminPassword);
-      const adminRef = ref(db, `/roles/${user.uid}/admin`);
-      const adminSnap = await get(adminRef);
-      const isAdmin = adminSnap.val() === true;
+      const ADMIN_USERNAME = 'admin';
+      const ADMIN_PASSWORD = 'Chatadmin2025$';
 
-      if (isAdmin) {
+      if (adminUsername === ADMIN_USERNAME && adminPassword === ADMIN_PASSWORD) {
         show('✅ Admin 登录成功！', 'success');
         localStorage.setItem('adminToken', 'logged_in');
         setShowAdminLogin(false);
         setTimeout(() => nav('/admin'), 500);
       } else {
-        show('❌ 您没有管理员权限。', 'error');
+        show('❌ Admin 用户名或密码错误', 'error');
         setAdminPassword('');
       }
-    } catch (e: any) {
-      show(`❌ 管理员登录失败: ${e?.message || e}`, 'error');
-      setAdminPassword('');
     } finally {
       setAdminLoggingIn(false);
     }
@@ -625,8 +620,8 @@ export default function Login() {
             
             <div className="space-y-4">
               <input
-                type="email"
-                placeholder="Email"
+                type="text"
+                placeholder="Username"
                 value={adminUsername}
                 onChange={(e) => setAdminUsername(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
