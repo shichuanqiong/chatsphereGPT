@@ -127,6 +127,22 @@ app.get('/admin/users', async (_req: Request, res: Response) => {
     const presenceSnap = await rtdb.ref('/presence').get();
     const presenceData = presenceSnap.val() || {};
     
+    // 获取所有消息，计算每个用户的消息数
+    const messagesSnap = await rtdb.ref('/messages').get();
+    const messagesData = messagesSnap.val() || {};
+    const userMessageCount: Record<string, number> = {};
+    
+    // 遍历所有房间的消息，统计每个用户的消息数
+    Object.entries(messagesData).forEach(([roomId, roomMessages]: [string, any]) => {
+      if (!roomMessages || typeof roomMessages !== 'object') return;
+      Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
+        const authorId = msg?.authorId;
+        if (authorId && typeof authorId === 'string') {
+          userMessageCount[authorId] = (userMessageCount[authorId] || 0) + 1;
+        }
+      });
+    });
+    
     const now = Date.now();
     const timeout = 60 * 1000;
     
@@ -140,7 +156,7 @@ app.get('/admin/users', async (_req: Request, res: Response) => {
         name: data.nickname || data.displayName || data.name || '未知用户',
         email: data.email || '',
         status: isOnline ? 'online' : 'offline',
-        messageCount: data.messageCount || 0,
+        messageCount: userMessageCount[uid] || 0,
         createdAt: data.createdAt,
         lastSeen: presence?.lastSeen,
       };
