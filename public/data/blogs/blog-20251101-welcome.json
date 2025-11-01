@@ -1,0 +1,15 @@
+{
+  "title": "Welcome to ChatSphere – A Simple, Beautiful Way to Connect",
+  "slug": "welcome-to-chatsphere",
+  "excerpt": "ChatSphere is a lightweight, real-time chat platform designed for simplicity and human connection. It's fast, minimal, and built to make conversations enjoyable again — whether you're chatting with friends, your team, or your community.",
+  "content_md": "## What is ChatSphere?\nChatSphere is a **simple, elegant, real-time chat platform** built to bring people together without the clutter or noise.\nNo complicated sign-up process. No endless buttons. Just conversations that flow naturally.\n\nOur goal is simple: **make chatting feel human again.**\nIn a world full of apps that chase engagement, ChatSphere focuses on clarity, comfort, and connection.\n\n---\n\n## Features You'll Love\n- **Clean & smooth interface:** Focus on your words, not on the UI.\n- **Mobile-friendly experience:** Carefully tuned layouts that feel great on phones.\n- **Real-time messaging & notifications:** Never miss what matters.\n- **Emojis & GIFs built-in:** Express yourself instantly.\n- **Slow-mode protection:** Keeps rooms calm and spam-free.\n- **Powerful admin dashboard:** Manage rooms, users, and analytics with ease.\n\n---\n\n## What We're Building Next\n- Improved direct messages and notifications\n- Room customization and pinned announcements\n- AI-powered bots and auto-news feeds\n- Richer analytics for engagement and content trends\n\n---\n\n## Why Now?\nSo many communities want a **simple, stable, and beautiful** place to talk.\nChatSphere is made for those who value meaningful conversations over endless features —\nfor those who just want to chat, share, and connect.\n\n---\n\n## Join Us\n- Create your first room and start chatting.\n- Share ChatSphere with your friends and teams.\n- Send us feedback — we're growing this together.\n\nThis is only the beginning.\n**Welcome to ChatSphere.**",
+  "cover": "https://images.unsplash.com/photo-1532635224-8896f4f9b36b?q=80&w=1600&auto=format&fit=crop",
+  "tags": ["product", "announcement", "community"],
+  "author": {
+    "id": "system",
+    "name": "ChatSphere Team"
+  },
+  "published": true,
+  "createdAt": 1730457600000,
+  "updatedAt": 1730457600000
+}
