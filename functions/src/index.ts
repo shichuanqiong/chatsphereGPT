@@ -128,21 +128,32 @@ app.get('/admin/users', async (_req: Request, res: Response) => {
     const presenceSnap = await rtdb.ref('/presence').get();
     const presenceData = presenceSnap.val() || {};
     
-    // 获取所有消息，计算每个用户的消息数
-    const messagesSnap = await rtdb.ref('/messages').get();
-    const messagesData = messagesSnap.val() || {};
+    // 获取房间列表，然后分批查询每个房间的消息
+    const roomsSnap = await rtdb.ref('/rooms').get();
+    const roomsData = roomsSnap.val() || {};
     const userMessageCount: Record<string, number> = {};
     
-    // 遍历所有房间的消息，统计每个用户的消息数
-    Object.entries(messagesData).forEach(([roomId, roomMessages]: [string, any]) => {
-      if (!roomMessages || typeof roomMessages !== 'object') return;
-      Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
-        const authorId = msg?.authorId;
-        if (authorId && typeof authorId === 'string') {
-          userMessageCount[authorId] = (userMessageCount[authorId] || 0) + 1;
-        }
-      });
-    });
+    // 分批遍历每个房间，查询消息并统计用户消息数
+    const roomIds = Object.keys(roomsData);
+    for (const roomId of roomIds) {
+      try {
+        const roomMessagesSnap = await rtdb.ref(`/messages/${roomId}`).get();
+        if (!roomMessagesSnap.exists()) continue;
+        
+        const roomMessages = roomMessagesSnap.val();
+        if (!roomMessages || typeof roomMessages !== 'object') continue;
+        
+        Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
+          const authorId = msg?.authorId;
+          if (authorId && typeof authorId === 'string') {
+            userMessageCount[authorId] = (userMessageCount[authorId] || 0) + 1;
+          }
+        });
+      } catch (err) {
+        console.warn(`[admin/users] Failed to fetch messages for room ${roomId}:`, err);
+        continue;
+      }
+    }
     
     const now = Date.now();
     const timeout = 60 * 1000;
