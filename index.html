@@ -118,6 +118,35 @@
     ]
   }
   </script>
+  
+  <!-- Build revision tracking -->
+  <meta name="build-revision" content="%VITE_APP_BUILD%"/>
+  
+  <!-- Clean old Service Workers and caches on load -->
+  <script>
+    (function() {
+      // 清理旧的 Service Worker 和缓存
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(regs => Promise.all(regs.map(r => r.unregister())))
+          .catch(() => {});
+        
+        if (window.caches && typeof window.caches.keys === 'function') {
+          window.caches.keys().then(keys => 
+            Promise.all(keys.map(k => window.caches.delete(k)))
+          );
+        }
+      }
+      
+      // 记录构建版本用于缓存检测
+      const rev = document.querySelector('meta[name="build-revision"]')?.content;
+      if (rev) {
+        try {
+          localStorage.setItem('build-revision', rev);
+        } catch (e) {}
+      }
+    })();
+  </script>
 </head>
 <body class='bg-black'>
   <div id='root'></div>

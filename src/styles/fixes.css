@@ -1,0 +1,30 @@
+/* 跨浏览器修复：在线用户行布局稳定性 */
+
+/* Sidebar 在线用户行 */
+#online .space-y-2 > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#online .space-y-2 > div > img {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+#online .space-y-2 > div > div:nth-child(2) {
+  min-width: 0;            /* 关键：防止不同浏览器把文本压到 0 宽 */
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 防止超长昵称破坏布局 */
+#online .space-y-2 > div .text-sm {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
