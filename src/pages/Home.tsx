@@ -1088,6 +1088,13 @@ export default function Home() {
         }
       />
 
+      {/* 移动端广告条 —— 只在手机显示 */}
+      <div className="block md:hidden w-full bg-black/30 px-3 py-2">
+        <div className="h-11 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_6px_24px_rgba(0,0,0,.25)] flex items-center justify-center">
+          <span className="text-sm text-zinc-200/90">Ad — Top Banner</span>
+        </div>
+      </div>
+
       <div id="app-shell" className="flex-1 flex flex-col min-h-0">
         <div className="max-w-[1400px] mx-auto flex gap-4 pt-2 md:pt-3 pb-3 flex-1 min-h-0 w-full">
         {/* 左侧栏（桌面常驻） */}

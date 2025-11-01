@@ -1,39 +1,95 @@
 /* Mobile-only layout adjustments */
-@media (max-width: 768px) {
-  /* 布局：隐藏左右栏，让中间全屏 */
-  #app-shell {
-    position: relative;
-    display: block;
+@media (max-width: 767px) {
+  /* 让 Header 在手机端用 flex 重排（不改 JSX）*/
+  .app-header {
+    height: 48px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 12px !important;
+    grid-column: auto !important;
+    grid-template-columns: none !important;
   }
 
-  /* 顶部条固定，高度固定不变 */
-  #topbar {
-    position: sticky;
-    top: 0;
-    z-index: 40;
+  /* Header 内部的 grid 容器在手机端改为 flex */
+  .app-header > div:first-child {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    gap: 8px;
+    padding: 0 !important;
   }
 
-  /* 重要：隐藏 header grid 的中间栏（广告条所在位置） */
-  #topbar > div > div:nth-child(2) {
+  /* 左：sidebar toggle —— 固定宽度，不收缩 */
+  #mobile-open-sidebar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  /* 中：midControlsAnchor —— 弹性区域，允许截断 */
+  #midControlsAnchor {
+    display: flex !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 隐藏品牌标题（在手机端移到侧栏） */
+  .header-brand {
     display: none !important;
   }
 
-  /* 把广告条通过 CSS 固定定位到 header 下方 */
-  #topbar > div > div:nth-child(2) > div {
-    position: fixed !important;
-    top: 56px !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: 44px !important;
-    z-index: 39 !important;
+  /* 右：操作区 —— 固定宽度 */
+  #rightControls {
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    padding: 4px 8px !important;
-    box-sizing: border-box !important;
-    border: none !important;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    justify-self: auto !important;
+  }
+
+  /* 用户头像固定大小，不收缩 */
+  #userAvatarWrap {
+    flex: 0 0 auto;
+  }
+
+  #userAvatarWrap button {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  /* Inbox 和 Bell 按钮不收缩 */
+  #btnInbox,
+  #btnBell {
+    flex: 0 0 auto !important;
+  }
+
+  /* 用户名文本截断 */
+  #rightControls > div:nth-last-child(2) {
+    display: none;
+  }
+
+  /* 布局：隐藏左右栏，让中间全屏 */
+  #app-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   /* 左侧栏默认隐藏，改成抽屉 */
@@ -65,18 +121,25 @@
   /* 右侧广告隐藏 */
   #ads-right { display: none !important; }
 
-  /* 聊天主体：在广告条下方，留出输入条空间 */
+  /* 聊天主体容器 */
+  #app-shell > div {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1;
+    min-h-0;
+  }
+
+  /* 聊天主体：给输入条留出空间 */
   #chat-main {
-    margin-top: 52px; /* header(56px) + 广告条(44px) + padding */
-    min-height: calc(100dvh - 56px - 52px - 64px);
-    padding-top: 8px;
+    flex: 1;
+    min-h-0;
     padding-bottom: 64px;
+    overflow-y: auto;
   }
 
   /* 消息滚动区 */
   #chat-scroll {
     max-height: none;
-    height: calc(100dvh - 56px - 52px - 64px - 8px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -106,53 +169,9 @@
     z-index: 60;
   }
 
-  /* 手机菜单按钮 */
-  #mobile-open-sidebar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.12);
-  }
-
-  /* header 保持一行，显示 LOGO + Inbox + 铃铛 + 头像 */
-  #topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 56px;
-    padding-inline: 12px;
-  }
-
-  /* LOGO/标题在窄屏稍微缩小，避免挤到 Inbox */
-  #topbar .brand,
-  #topbar .logo,
-  #topbar .title {
-    max-width: 44vw;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #midControlsAnchor {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  /* Header 品牌移至侧栏后，隐藏 header 内品牌区域 */
-  #topbar .header-brand {
-    display: none;
-  }
-
   /* 侧栏顶部展示品牌 */
   #sidebar-brand {
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 10px;
     padding: 18px 20px;
@@ -166,26 +185,10 @@
   }
 }
 
-/* 桌面端隐藏"手机菜单按钮" */
-@media (min-width: 769px) {
+/* 桌面端保持原样 */
+@media (min-width: 768px) {
   #mobile-open-sidebar { display: none !important; }
-  
-  /* 桌面端恢复广告条在 header 内的正常位置 */
-  #topbar > div > div:nth-child(2) {
-    display: auto !important;
-  }
-
-  #topbar > div > div:nth-child(2) > div {
-    position: static !important;
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    width: auto !important;
-    height: auto !important;
-    z-index: auto !important;
-    background: none !important;
-    padding: 0 !important;
-  }
+  .sidebar-brand { display: none !important; }
 }
 
 

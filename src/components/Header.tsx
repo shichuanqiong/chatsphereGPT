@@ -81,7 +81,7 @@ export default function Header({
       <header
         id="topbar"
         ref={topbarRef}
-        className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 px-3 md:px-6"
+        className="app-header sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 px-3 md:px-6"
         style={{paddingTop:'env(safe-area-inset-top)'}}
       >
         {/* 一行三段：左中右 */}
@@ -101,8 +101,8 @@ export default function Header({
             </div>
           </div>
 
-          {/* 中：Top Banner（自适应居中） */}
-          <div className="justify-self-center w-full max-w-[728px] px-2">
+          {/* 中：Top Banner（自适应居中） —— 手机隐藏，桌面显示 */}
+          <div className="hidden md:block justify-self-center w-full max-w-[728px] px-2">
             <div className="h-[44px] md:h-[56px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_6px_24px_rgba(0,0,0,.25)] flex items-center justify-center">
               <span className="text-sm text-zinc-200/90">Ad — Top Banner</span>
               {/* 之后替换为 <ResponsiveAd slot="XXXX" /> */}
