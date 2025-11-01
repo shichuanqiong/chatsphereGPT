@@ -29,6 +29,7 @@ export default function Login() {
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminLoggingIn, setAdminLoggingIn] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
   // 快捷键监听：Ctrl+Shift+A 打开 Admin 登录
   useEffect(() => {
@@ -601,7 +602,12 @@ export default function Login() {
 
         <div className="mt-6 text-center text-white/60 text-sm space-y-2">
           <div>
-            <span className="hover:text-white transition-colors cursor-pointer">Terms & Privacy Policy</span>
+            <button
+              onClick={() => setShowPrivacyPolicy(true)}
+              className="hover:text-white transition-colors cursor-pointer bg-none border-none p-0"
+            >
+              Terms & Privacy Policy
+            </button>
             <span className="mx-1 text-white/30">·</span>
             <span className="hover:text-white transition-colors cursor-pointer">Contact Us</span>
             <span className="mx-1 text-white/30">·</span>
@@ -611,6 +617,99 @@ export default function Login() {
           <div className="text-xs text-white/40">© 2025 ChatSphere</div>
         </div>
       </GlassCard>
+
+      {/* Privacy Policy 弹窗 */}
+      {showPrivacyPolicy && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-white/10 p-8 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">🔒 Privacy Policy</h2>
+              <button
+                onClick={() => setShowPrivacyPolicy(false)}
+                className="text-white/60 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="text-white/80 space-y-4 text-sm leading-relaxed">
+              <p><strong>Last Updated: October 31, 2025</strong></p>
+              <p>ChatSphere values your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our services.</p>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">1. Information We Collect</h3>
+                <p className="text-white/70">We may collect the following types of information:</p>
+                <ul className="list-disc list-inside text-white/70 space-y-1 ml-2">
+                  <li><strong>Account Information:</strong> Email, username, encrypted password.</li>
+                  <li><strong>Guest Information:</strong> Temporary nickname, country or region (for localization).</li>
+                  <li><strong>Chat and Interaction Data:</strong> Messages and activity logs (temporarily stored for chat functionality).</li>
+                  <li><strong>Technical Data:</strong> Browser type, device information, IP address, and system logs for security and performance optimization.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">2. How We Use Your Information</h3>
+                <p className="text-white/70">We use the collected information to:</p>
+                <ul className="list-disc list-inside text-white/70 space-y-1 ml-2">
+                  <li>Authenticate users and manage accounts.</li>
+                  <li>Operate and improve the ChatSphere platform.</li>
+                  <li>Detect and prevent fraud, abuse, or security risks.</li>
+                  <li>Analyze usage trends and enhance user experience.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">3. Data Protection</h3>
+                <ul className="list-disc list-inside text-white/70 space-y-1 ml-2">
+                  <li>All data transmissions are encrypted via HTTPS.</li>
+                  <li>Authentication and data storage are secured using Firebase Authentication and Realtime Database security rules.</li>
+                  <li>Passwords are never stored in plain text.</li>
+                  <li>Access to sensitive data is restricted to authorized system administrators.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">4. Data Retention and Deletion</h3>
+                <ul className="list-disc list-inside text-white/70 space-y-1 ml-2">
+                  <li>Registered users may request account deletion at any time.</li>
+                  <li>Guest session data is automatically deleted after a short retention period.</li>
+                  <li>Some logs may be temporarily retained for security or debugging purposes.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">5. Third-Party Services</h3>
+                <p className="text-white/70">ChatSphere uses third-party providers (such as Firebase, Google Analytics, and related APIs). These services may collect usage information independently and are governed by their own privacy policies.</p>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">6. Children's Privacy</h3>
+                <p className="text-white/70">ChatSphere is not intended for individuals under the age of 13. If we become aware that a child has registered, we will promptly delete the related account and data.</p>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">7. Changes to This Policy</h3>
+                <p className="text-white/70">We may update this Privacy Policy from time to time. Any significant changes will be announced on the website or through user notifications.</p>
+              </div>
+
+              <div>
+                <h3 className="text-cyan-300 font-semibold mb-2">8. Contact Us</h3>
+                <p className="text-white/70">If you have any questions or concerns regarding your privacy, please contact us at:</p>
+                <p className="text-white/70"><strong>📧 chatspherelive@gmail.com</strong></p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowPrivacyPolicy(false)}
+                className="px-6 py-2 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Admin 登录弹窗 */}
       {showAdminLogin && (
