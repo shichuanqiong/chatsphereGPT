@@ -493,11 +493,17 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
       const now = Date.now();
       const oneDayAgo = now - 24 * 60 * 60 * 1000;
 
+      console.log(`[aggregateMetrics] START: now=${now}, oneDayAgo=${oneDayAgo}`);
+
       // ★ 修复：从 RTDB /messages 读取消息而不是 Firestore
       const messagesSnap = await rtdb.ref('/messages').get();
       const messagesData = messagesSnap.val() || {};
 
       let msg24h = 0;
+      let totalMsgCount = 0;
+      let invalidTimestampCount = 0;
+      let outOfRangeCount = 0;
+
       const buckets: { h: number; c: number }[] = Array.from({ length: 24 }, (_, i) => ({ h: i, c: 0 }));
       const roomCounts: Record<string, number> = {};
 
@@ -505,8 +511,16 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
       Object.entries(messagesData).forEach(([roomId, messages]: [string, any]) => {
         if (!messages || typeof messages !== 'object') return;
 
-        Object.entries(messages).forEach(([_, msg]: [string, any]) => {
-          const msgTime = msg.createdAt || 0;
+        Object.entries(messages).forEach(([msgId, msg]: [string, any]) => {
+          totalMsgCount++;
+          const msgTime = msg?.createdAt;
+          
+          // ★ 改进：检查 msgTime 是否真的是数字
+          if (typeof msgTime !== 'number' || msgTime <= 0) {
+            invalidTimestampCount++;
+            console.warn(`[aggregateMetrics] Invalid timestamp: room=${roomId}, msgId=${msgId}, createdAt=${msgTime}`);
+            return;
+          }
           
           // 只计算 24 小时内的消息
           if (msgTime >= oneDayAgo && msgTime <= now) {
@@ -514,15 +528,22 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
             
             // 分桶统计（按小时，使用 UTC 而不是本地时区）
             const utcHour = new Date(msgTime).getUTCHours();
-            if (buckets[utcHour]) {
+            if (utcHour >= 0 && utcHour < 24 && buckets[utcHour]) {
               buckets[utcHour].c++;
+            } else {
+              console.warn(`[aggregateMetrics] Invalid hour: msgTime=${msgTime}, utcHour=${utcHour}`);
             }
             
             // 房间消息数统计
             roomCounts[roomId] = (roomCounts[roomId] ?? 0) + 1;
+          } else {
+            outOfRangeCount++;
           }
         });
       });
+
+      console.log(`[aggregateMetrics] Messages: total=${totalMsgCount}, invalid_ts=${invalidTimestampCount}, out_of_range=${outOfRangeCount}, counted=${msg24h}`);
+      console.log(`[aggregateMetrics] Buckets:`, buckets);
 
       // 排序热门房间（取前 3）
       let topRooms = Object.entries(roomCounts)
@@ -599,6 +620,8 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
       const yesterday = new Date(now - 24 * 60 * 60 * 1000);
       const dateStr = yesterday.toISOString().split('T')[0]; // yyyy-mm-dd
 
+      console.log(`[calculateDailyActiveUsers] START for date ${dateStr}`);
+
       // 从 RTDB /messages 读取消息（不是 Firestore）
       const messagesSnap = await rtdb.ref('/messages').get();
       if (!messagesSnap.exists()) {
@@ -615,35 +638,44 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
       const oneDayAgo = yesterday.getTime();
       const endTime = new Date().getTime();
 
+      console.log(`[DAU] Time range: ${oneDayAgo} to ${endTime} (${(endTime - oneDayAgo) / 1000 / 60 / 60} hours)`);
+
+      let totalMsgCount = 0;
+      let validMsgCount = 0;
+      let noAuthorCount = 0;
+
       // 遍历所有房间的消息
       Object.entries(messagesData).forEach(([roomId, roomMessages]: [string, any]) => {
         if (!roomMessages || typeof roomMessages !== 'object') return;
 
-        Object.entries(roomMessages).forEach(([_, msg]: [string, any]) => {
+        Object.entries(roomMessages).forEach(([msgId, msg]: [string, any]) => {
+          totalMsgCount++;
           const createdAt = msg?.createdAt;
           const authorId = msg?.authorId;
 
           // 检查时间戳类型和范围（24小时内）
           if (typeof createdAt === 'number' && createdAt >= oneDayAgo && createdAt <= endTime) {
+            validMsgCount++;
             // 检查用户 ID
             if (authorId && typeof authorId === 'string') {
               uniqueUsers.add(authorId);
+            } else {
+              noAuthorCount++;
             }
           }
         });
       });
 
       const dau = uniqueUsers.size;
+      console.log(`[DAU] Messages: total=${totalMsgCount}, valid_ts=${validMsgCount}, no_author=${noAuthorCount}, unique_users=${dau}`);
+      console.log(`[DAU] User IDs:`, Array.from(uniqueUsers));
 
-      // 写入 daily_active_users/{date}
       await db.doc(`daily_active_users/${dateStr}`).set({ count: dau });
-
-      // 同时更新 metrics/runtime.dau
       await db.doc('metrics/runtime').set(
         { dau, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
         { merge: true }
       );
-
+      
       console.log(`✓ DAU calculated for ${dateStr}: ${dau} unique users`);
     } catch (err: any) {
       console.error('calculateDailyActiveUsers error:', err);
