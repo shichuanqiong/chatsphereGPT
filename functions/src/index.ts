@@ -512,10 +512,10 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
           if (msgTime >= oneDayAgo && msgTime <= now) {
             msg24h++;
             
-            // 分桶统计（按小时）
-            const hour = new Date(msgTime).getHours();
-            if (buckets[hour]) {
-              buckets[hour].c++;
+            // 分桶统计（按小时，使用 UTC 而不是本地时区）
+            const utcHour = new Date(msgTime).getUTCHours();
+            if (buckets[utcHour]) {
+              buckets[utcHour].c++;
             }
             
             // 房间消息数统计
@@ -525,10 +525,20 @@ export const aggregateMetrics = functions.scheduler.onSchedule(
       });
 
       // 排序热门房间（取前 3）
-      const topRooms = Object.entries(roomCounts)
+      let topRooms = Object.entries(roomCounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3)
-        .map(([roomId, count]) => ({ name: roomId, count }));
+        .map(([roomId, count]) => ({ roomId, count }));
+
+      // 获取房间名字（数据丰富化）
+      const roomsSnap = await rtdb.ref('/rooms').get();
+      const roomsData = roomsSnap.exists() ? roomsSnap.val() : {};
+      
+      topRooms = topRooms.map(room => {
+        const roomInfo = roomsData[room.roomId];
+        const roomName = roomInfo?.name || room.roomId;  // 如果没有名字就用 ID
+        return { name: roomName, count: room.count };
+      });
 
       // 2) 写入 metrics/runtime
       await db.doc('metrics/runtime').set(
