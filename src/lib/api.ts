@@ -124,10 +124,20 @@ export async function countMessages24hFromRTDB() {
     const topRooms = Object.entries(perRoom)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
-      .map(([roomId, count]) => ({ name: roomId, count }));
+      .map(([roomId, count]) => ({ roomId, count }));
 
-    console.log(`[countMessages24h] Total: ${total}, TopRooms:`, topRooms);
-    return { total, perRoom, topRooms };
+    // 获取房间名字
+    const roomsSnap = await get(dbRef(db, 'rooms'));
+    const roomsData = roomsSnap.exists() ? roomsSnap.val() : {};
+    
+    const topRoomsWithNames = topRooms.map(room => {
+      const roomInfo = roomsData[room.roomId];
+      const roomName = roomInfo?.name || room.roomId;  // 如果没有名字就用 ID
+      return { name: roomName, count: room.count };
+    });
+
+    console.log(`[countMessages24h] Total: ${total}, TopRooms:`, topRoomsWithNames);
+    return { total, perRoom, topRooms: topRoomsWithNames };
   } catch (err: any) {
     console.error('[countMessages24h] Error:', err);
     return { total: 0, perRoom: {}, topRooms: [] };
