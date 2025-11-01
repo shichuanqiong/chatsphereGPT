@@ -167,6 +167,7 @@ export default function AdminDashboard() {
   
   // 用户筛选状态
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [userPage, setUserPage] = useState(1);
 
   // Blog 管理状态
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -187,6 +188,11 @@ export default function AdminDashboard() {
       console.error('Failed to save admin-section:', error);
     }
   }, [section]);
+
+  // 搜索或筛选改变时重置分页
+  useEffect(() => {
+    setUserPage(1);
+  }, [userSearch, userStatusFilter]);
 
   // 加载 Blogs 数据
   useEffect(() => {
@@ -226,6 +232,14 @@ export default function AdminDashboard() {
       // 同状态下按名字排序
       return a.name.localeCompare(b.name);
     });
+
+  // 分页计算
+  const USERS_PER_PAGE = 20;
+  const totalUserPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (userPage - 1) * USERS_PER_PAGE,
+    userPage * USERS_PER_PAGE
+  );
 
   // 过滤房间
   const filteredRooms = allRooms.filter(room =>
@@ -563,7 +577,7 @@ export default function AdminDashboard() {
                         {usersLoading ? (
                           <div className="text-center py-6 text-zinc-400">⏳ Loading users...</div>
                         ) : filteredUsers.length > 0 ? (
-                          filteredUsers.map((user, idx) => (
+                          paginatedUsers.map((user, idx) => (
                             <div key={idx} className="flex justify-between items-center p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
                               <div>
                                 <p className="font-medium">{user.name}</p>
@@ -597,6 +611,29 @@ export default function AdminDashboard() {
                           </div>
                         )}
                       </div>
+
+                      {/* 分页控件 */}
+                      {filteredUsers.length > USERS_PER_PAGE && (
+                        <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-white/10">
+                          <button
+                            onClick={() => setUserPage(Math.max(1, userPage - 1))}
+                            disabled={userPage === 1}
+                            className="px-3 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          >
+                            ← Prev
+                          </button>
+                          <span className="text-sm text-white/70">
+                            Page {userPage} of {totalUserPages}
+                          </span>
+                          <button
+                            onClick={() => setUserPage(Math.min(totalUserPages, userPage + 1))}
+                            disabled={userPage === totalUserPages}
+                            className="px-3 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          >
+                            Next →
+                          </button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
