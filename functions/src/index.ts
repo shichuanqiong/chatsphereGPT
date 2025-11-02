@@ -2,8 +2,9 @@ import * as functions from 'firebase-functions/v2';
 import admin from 'firebase-admin';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { onMessageCreate, onMessageDelete } from './onMessageCounters';
-import { backfillUserMsgCount } from './tools/backfillUserMsgCount';
+// Temporarily disabled - will be fixed in next iteration
+// import { onMessageCreate, onMessageDelete } from './onMessageCounters.js';
+// import { backfillUserMsgCount } from './tools/backfillUserMsgCount.js';
 
 // Initialize
 admin.initializeApp();
@@ -701,9 +702,9 @@ export const calculateDailyActiveUsers = functions.scheduler.onSchedule(
 export const api = functions.https.onRequest(app);
 
 // ★ Message Counter Maintenance Triggers
-export { onMessageCreate, onMessageDelete };
+// export { onMessageCreate, onMessageDelete }; // Temporarily disabled
 
 // ★ One-time Backfill Script
-export { backfillUserMsgCount };
+// export { backfillUserMsgCount }; // Temporarily disabled
 
 console.log('[deploy] counters installed');
