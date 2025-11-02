@@ -423,7 +423,7 @@ export default function Login() {
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Nickname"
+                    placeholder="Email"
                     className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:border-white/40 transition-all duration-200 hover:bg-white/15"
                   />
                   <input
