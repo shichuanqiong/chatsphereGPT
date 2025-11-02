@@ -1,22 +1,33 @@
 /* 跨浏览器修复：在线用户行布局稳定性 */
 
-/* Right Sidebar Ad Display（完全覆盖 Tailwind） */
-/* 移除所有 Tailwind hidden/md:block 的影响 */
+/* Right Sidebar Ad Display（强制显示控制） */
 #ads-right {
   display: none !important;
+  visibility: hidden !important;
   width: 300px !important;
-  flex-shrink: 0 !important;
   height: 100% !important;
+  flex: 0 0 300px !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  pointer-events: none !important;
 }
 
 /* 在桌面屏幕（md 及以上）显示 */
 @media (min-width: 768px) {
   #ads-right {
     display: flex !important;
+    visibility: visible !important;
     flex-direction: column !important;
     gap: 1rem !important;
+    pointer-events: auto !important;
   }
+}
+
+/* 广告卡片本身的样式 */
+#ads-right > div {
+  flex: 0 0 220px !important;
+  height: 220px !important;
 }
 
 /* 防止 Tailwind 的 .space-y-4  在 flex 下有问题 */
