@@ -46,6 +46,17 @@
   }
 }
 
+/* 大屏保险兜底（对付更激进的拦截器规则） */
+@media (min-width: 1024px) {
+  #sponsor-rail {
+    display: block !important;
+    flex: 0 0 300px !important;
+    width: 300px !important;
+    min-width: 300px !important;
+    max-width: 300px !important;
+  }
+}
+
 /* Sidebar 在线用户行 */
 #online .space-y-2 > div {
   display: flex;
