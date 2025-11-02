@@ -4,7 +4,7 @@
  */
 
 const BASE = import.meta.env.VITE_API_BASE || 'https://us-central1-chatspheregpt.cloudfunctions.net/api';
-const KEY = import.meta.env.VITE_ADMIN_KEY || 'ChatSphere2025Secure!@#$%';
+const KEY = import.meta.env.VITE_ADMIN_KEY || 'ChatSphere2025AdminSecure';
 
 console.log('=== [AdminAPI] 初始化 ===');
 console.log('BASE:', BASE);

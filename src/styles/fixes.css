@@ -1,8 +1,8 @@
 /* 跨浏览器修复：在线用户行布局稳定性 */
 
-/* Right Sidebar Ad Display - 仅在移动设备上隐藏（媒体查询限制） */
+/* Right Sidebar Display - 仅在移动设备上隐藏（媒体查询限制） */
 @media (max-width: 767px) {
-  #ads-right {
+  #sponsor-rail {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
@@ -11,7 +11,7 @@
 
 /* 桌面版本：完整配置 */
 @media (min-width: 768px) {
-  #ads-right {
+  #sponsor-rail {
     display: flex !important;
     visibility: visible !important;
     width: 300px !important;
@@ -32,7 +32,7 @@
   }
 
   /* 广告卡片本身的样式 */
-  #ads-right > div {
+  #sponsor-rail > div {
     flex: 0 0 220px !important;
     height: 220px !important;
     min-height: 220px !important;
@@ -41,7 +41,7 @@
   }
 
   /* 防止 Tailwind 的 .space-y-4 在 flex 下有问题 */
-  #ads-right > * {
+  #sponsor-rail > * {
     flex-shrink: 0 !important;
   }
 }

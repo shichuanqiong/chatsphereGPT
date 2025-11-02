@@ -1100,7 +1100,7 @@ export default function Home() {
       </div>
 
       <div id="app-shell" className="flex-1 flex flex-col min-h-0">
-        <div className="max-w-[1400px] mx-auto flex gap-4 pt-2 md:pt-3 pb-3 flex-1 min-h-0 w-full">
+        <div className="max-w-[1400px] mx-auto flex gap-4 pt-2 md:pt-3 pb-3 flex-1 min-h-0">
         {/* 左侧栏（桌面常驻） */}
         <aside id="sidebar" className="w-[280px] shrink-0 h-full overflow-y-auto">
           <div id="sidebar-brand" className="sidebar-brand px-4 py-4 flex items-center gap-3">
@@ -1442,10 +1442,10 @@ export default function Home() {
         </section>
 
         {/* 右侧广告栏 */}
-        <aside id="ads-right">
-          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Ad — Right Rail</div>
-          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Ad — Right Rail</div>
-          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Ad — Right Rail</div>
+        <aside id="sponsor-rail" data-slot="right-rail" className="w-[300px] shrink-0 h-full overflow-y-auto space-y-4 basis-1/3">
+          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>
+          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>
+          <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>
         </aside>
       </div>
       </div>

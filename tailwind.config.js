@@ -16,6 +16,9 @@ export default {
     "w-[300px]",
     "w-rail",
     "w-[280px]",
+    // Basis classes for flex layout
+    "basis-[300px]",
+    "basis-1/3",
     // Media query variants
     { pattern: /^md:/ },
     { pattern: /^lg:/ },

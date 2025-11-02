@@ -34,24 +34,27 @@ app.use(cors({
 
 app.use(express.json());
 
-// ★ Admin Key - 从环境变量读取（runtime config 通过 process.env 注入）
+// ★ Admin Key - 从环境变量读取（Firebase deploy 会自动设置）
 const ADMIN_KEY = (() => {
-  // Firebase runtime config 会被自动注入到 process.env
-  // 格式: process.env.ADMIN_KEY（如果用 firebase functions:config:set）
-  // 或通过 Secret Manager（新推荐方式）
-  
-  const envKey = process.env.ADMIN_KEY;
-  if (envKey) {
-    console.log('[INIT] ✓ ADMIN_KEY from process.env.ADMIN_KEY');
-    console.log('[INIT] Key length:', envKey.length);
-    console.log('[INIT] First 10 chars:', envKey.substring(0, 10));
-    console.log('[INIT] Last 10 chars:', envKey.substring(envKey.length - 10));
-    return envKey;
+  try {
+    // Firebase 在部署时会从 .env.local 或通过 --set-env-vars 设置环境变量
+    // 或通过 Secret Manager 注入
+    const envKey = process.env.ADMIN_KEY;
+    if (envKey) {
+      console.log('[INIT] ✓ ADMIN_KEY from process.env.ADMIN_KEY');
+      console.log('[INIT] Key length:', envKey.length);
+      console.log('[INIT] First 10 chars:', envKey.substring(0, 10));
+      console.log('[INIT] Last 10 chars:', envKey.substring(envKey.length - 10));
+      return envKey;
+    }
+  } catch (e) {
+    console.log('[INIT] ⚠ process.env.ADMIN_KEY error:', e);
   }
   
-  // 备用：硬编码（本地开发）
+  // 备用：硬编码（本地开发或没有配置时）
+  // 使用与前端相同的 fallback 值
   console.log('[INIT] ⚠ ADMIN_KEY hardcoded (fallback)');
-  const fallbackKey = 'ChatSphere2025Secure!@#$%';
+  const fallbackKey = 'ChatSphere2025AdminSecure';
   console.log('[INIT] Fallback key length:', fallbackKey.length);
   return fallbackKey;
 })();
