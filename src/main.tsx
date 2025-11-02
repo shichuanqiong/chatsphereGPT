@@ -9,7 +9,7 @@ import './styles/fixes.css'
 
 // 🔄 一次性版本号缓存刷新（base: '/' 迁移时生效）
 // 这段代码在版本变化时触发一次 reload，清除旧 hash 缓存
-const APP_VERSION = '2025-11-02-base-slash-v1'
+const APP_VERSION = '2025-11-02-base-slash-v2'
 const VERSION_KEY = 'app_version_cache_key'
 
 try {
