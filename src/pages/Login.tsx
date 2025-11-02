@@ -214,15 +214,15 @@ export default function Login() {
         localStorage.setItem('password', password);
       }
 
-      // 3) 先导航，避免写库失败卡在登录页
-      nav('/home');
-
-      // 4) 后台写入用户档案（失败只告警，不阻塞）
+      // 3) 后台写入用户档案（失败只告警，不阻塞）
       try {
         await ensureProfile(user.uid);
       } catch (e) {
         console.warn('ensure profile failed:', e);
       }
+
+      // 4) 先导航，避免写库失败卡在登录页
+      nav('/home');
 
       // 4.5) 设置 admin 角色（用于 analytics 权限）
       // 硬编码 admin 邮箱

@@ -1,5 +1,17 @@
 /* 跨浏览器修复：在线用户行布局稳定性 */
 
+/* Right Sidebar Ad Display（保险规则） */
+#ads-right {
+  display: none;
+  width: 300px;
+}
+
+@media (min-width: 768px) {
+  #ads-right {
+    display: block !important;
+  }
+}
+
 /* Sidebar 在线用户行 */
 #online .space-y-2 > div {
   display: flex;
