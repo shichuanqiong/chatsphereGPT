@@ -1,26 +1,33 @@
 /* 跨浏览器修复：在线用户行布局稳定性 */
 
-/* Right Sidebar Ad Display（强制显示控制） */
+/* Right Sidebar Ad Display - 修复被压缩的问题 */
 #ads-right {
   display: none !important;
   visibility: hidden !important;
   width: 300px !important;
+  min-width: 300px !important;
+  max-width: 300px !important;
   height: 100% !important;
   flex: 0 0 300px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   position: relative !important;
   pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-/* 在桌面屏幕（md 及以上）显示 */
-@media (min-width: 768px) {
+/* 在桌面屏幕（md 及以上）显示 - 确保不被 max-w 压缩 */
+@media screen and (min-width: 768px) {
   #ads-right {
     display: flex !important;
     visibility: visible !important;
     flex-direction: column !important;
     gap: 1rem !important;
     pointer-events: auto !important;
+    /* 强制这个元素不缩小，保持 300px */
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
   }
 }
 
@@ -28,11 +35,14 @@
 #ads-right > div {
   flex: 0 0 220px !important;
   height: 220px !important;
+  min-height: 220px !important;
+  max-height: 220px !important;
+  flex-shrink: 0 !important;
 }
 
-/* 防止 Tailwind 的 .space-y-4  在 flex 下有问题 */
+/* 防止 Tailwind 的 .space-y-4 在 flex 下有问题 */
 #ads-right > * {
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
 }
 
 /* Sidebar 在线用户行 */
