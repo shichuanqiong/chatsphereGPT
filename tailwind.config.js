@@ -34,6 +34,7 @@ export default {
     // Spacing and layout
     { pattern: /^gap-/ },
     { pattern: /^min-/ },
+    "min-w-0",
   ],
   plugins:[] 
 }

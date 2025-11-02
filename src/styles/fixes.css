@@ -2,53 +2,16 @@
 
 /* Right Sidebar Display - 仅在移动设备上隐藏（媒体查询限制） */
 @media (max-width: 767px) {
-  #sponsor-rail {
+  #ads-right {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
 }
 
-/* 桌面版本：完整配置 */
-@media (min-width: 768px) {
-  #sponsor-rail {
-    display: flex !important;
-    visibility: visible !important;
-    width: 300px !important;
-    min-width: 300px !important;
-    max-width: 300px !important;
-    height: 100% !important;
-    flex: 0 0 300px !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    position: relative !important;
-    pointer-events: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    flex-direction: column !important;
-    gap: 1rem !important;
-  }
-
-  /* 广告卡片本身的样式 */
-  #sponsor-rail > div {
-    flex: 0 0 220px !important;
-    height: 220px !important;
-    min-height: 220px !important;
-    max-height: 220px !important;
-    flex-shrink: 0 !important;
-  }
-
-  /* 防止 Tailwind 的 .space-y-4 在 flex 下有问题 */
-  #sponsor-rail > * {
-    flex-shrink: 0 !important;
-  }
-}
-
 /* 大屏保险兜底（对付更激进的拦截器规则） */
 @media (min-width: 1024px) {
-  #sponsor-rail {
+  #ads-right {
     display: block !important;
     flex: 0 0 300px !important;
     width: 300px !important;
