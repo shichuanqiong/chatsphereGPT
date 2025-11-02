@@ -124,9 +124,9 @@ export function FriendRow({
         <div className="flex items-center gap-3">
           <div className="relative">
             <img
-              src={user.avatarUrl || `https://api.dicebear.com/7.x/adventurer-neutral/png?seed=${encodeURIComponent(user.nickname || 'user')}&size=64&radius=50&backgroundType=gradientLinear`}
+              src={user.avatarUrl || `https://api.dicebear.com/7.x/adventurer-neutral/png?seed=${encodeURIComponent(user.nickname || user.uid || 'user')}&size=64&radius=50&backgroundType=gradientLinear`}
               className="w-9 h-9 rounded-full object-cover border border-white/10"
-              alt=""
+              alt={user.nickname || 'User'}
             />
             {/* 在线状态点 */}
             <span
@@ -137,7 +137,7 @@ export function FriendRow({
             />
           </div>
           <div className="leading-tight flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">{user.nickname}</div>
+            <div className="font-medium text-sm truncate">{user.nickname || `User-${user.uid?.slice(0, 6)}`}</div>
             <div className="text-[11px] text-white/60 truncate">
               {user.age ?? '--'} · {user.gender ?? '--'} · {user.country ?? '--'}
             </div>
