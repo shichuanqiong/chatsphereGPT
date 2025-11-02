@@ -14,21 +14,41 @@ const PROFILE_DEFAULTS = {
 /**
  * Ensure profile exists with required fields, but don't overwrite existing data like bio
  * @param uid User ID
+ * @param userData Optional: { nickname, age, gender, country, isGuest } - actual user data to write
  */
-export async function ensureProfile(uid: string) {
+export async function ensureProfile(
+  uid: string,
+  userData?: {
+    nickname?: string;
+    age?: number | string;
+    gender?: string;
+    country?: string;
+    isGuest?: boolean;
+  }
+) {
   const r = ref(db, `profiles/${uid}`);
   const snap = await get(r);
 
+  // 构建默认数据，包含 uid 字段
   const defaults = {
+    uid,  // ✅ 添加 uid 字段
     ...PROFILE_DEFAULTS,
     createdAt: typeof PROFILE_DEFAULTS.createdAt === 'function' 
       ? PROFILE_DEFAULTS.createdAt() 
-      : PROFILE_DEFAULTS.createdAt
+      : PROFILE_DEFAULTS.createdAt,
+    // 如果提供了用户数据，使用用户数据覆盖默认值
+    ...(userData ? {
+      nickname: userData.nickname || '',
+      age: userData.age ? String(userData.age) : '',
+      gender: userData.gender || '',
+      country: userData.country || '',
+      isGuest: userData.isGuest ?? false,
+    } : {}),
   };
 
   if (!snap.exists()) {
     // 首次创建：用 update() 只写必要字段，不覆盖
-    console.log('[PROFILE] ensure (create)', uid);
+    console.log('[PROFILE] ensure (create)', uid, { nickname: defaults.nickname, isGuest: defaults.isGuest });
     await update(r, defaults);
     return;
   }

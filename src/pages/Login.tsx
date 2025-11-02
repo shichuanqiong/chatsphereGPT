@@ -216,7 +216,13 @@ export default function Login() {
 
       // 3) 后台写入用户档案（失败只告警，不阻塞）
       try {
-        await ensureProfile(user.uid);
+        await ensureProfile(user.uid, {
+          nickname: normalizedNickname,
+          age: normalizedAge,
+          gender: gender,
+          country: normalizedCountry,
+          isGuest: isGuest,
+        });
       } catch (e) {
         console.warn('ensure profile failed:', e);
       }

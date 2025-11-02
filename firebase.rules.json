@@ -2,15 +2,24 @@
   "rules": {
     ".read": false,
     ".write": false,
+    
     "profiles": {
+      ".read": true,
       "$uid": {
-        ".read": "auth != null",
         ".write": "$uid === auth.uid",
         "bio": {
           ".validate": "newData.isString() && newData.val().length <= 500"
         }
       }
     },
+    
+    "presence": {
+      ".read": true,
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    
     "nicknameIndex": {
       "$slug": {
         ".read": "auth != null",
@@ -18,12 +27,14 @@
         ".validate": "newData.child('uid').val() === auth.uid"
       }
     },
+    
     "roles": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+    
     "rooms": {
       "$roomId": {
         ".read": "auth != null && (root.child('roles/'+auth.uid+'/admin').val() === true || ((root.child('rooms/'+$roomId+'/visibility').val() === 'public') || root.child('roomMembers/'+$roomId+'/'+auth.uid).exists()))",
@@ -35,6 +46,7 @@
         }
       }
     },
+    
     "roomMembers": {
       "$roomId": {
         "$uid": {
@@ -43,6 +55,7 @@
         }
       }
     },
+    
     "messages": {
       "$roomId": {
         ".read": "auth != null",
@@ -55,12 +68,14 @@
         }
       }
     },
+    
     "profilesStats": {
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null"
       }
     },
+    
     "dmMessages": {
       "$threadId": {
         ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
@@ -72,6 +87,7 @@
         }
       }
     },
+    
     "dmThreads": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
@@ -80,12 +96,14 @@
         }
       }
     },
+    
     "roomsMeta": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+    
     "blocks": {
       "$uid": {
         "$targetUid": {
@@ -94,24 +112,21 @@
         }
       }
     },
+    
     "userBlocks": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+    
     "friends": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
-    "presence": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    },
+    
     "inbox": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
@@ -123,6 +138,7 @@
         }
       }
     },
+    
     "rateLimits": {
       "$roomId": {
         "$uid": {
@@ -132,6 +148,7 @@
         }
       }
     },
+    
     "posts": {
       ".read": true,
       ".write": false
