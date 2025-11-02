@@ -1442,7 +1442,7 @@ export default function Home() {
         </section>
 
         {/* 右侧广告栏 */}
-        <aside id="ads-right" className="w-[300px] shrink-0 h-full overflow-y-auto space-y-4" style={{ flex: '0 0 300px' }}>
+        <aside id="sponsor-rail" data-slot="right-rail" className="w-[300px] shrink-0 h-full overflow-y-auto space-y-4" style={{ flex: '0 0 300px' }}>
           <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>
           <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>
           <div className="h-[220px] rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white/60">Right Rail</div>

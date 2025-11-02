@@ -167,7 +167,7 @@
   }
 
   /* 右侧广告隐藏 */
-  #ads-right { display: none !important; }
+  #sponsor-rail { display: none !important; }
 
   /* 聊天主体容器 */
   #app-shell > div {

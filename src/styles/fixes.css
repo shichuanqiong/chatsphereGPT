@@ -2,7 +2,7 @@
 
 /* Right Sidebar Display - 仅在移动设备上隐藏（媒体查询限制） */
 @media (max-width: 767px) {
-  #ads-right {
+  #sponsor-rail {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
@@ -11,7 +11,7 @@
 
 /* 大屏保险兜底（对付更激进的拦截器规则） */
 @media (min-width: 1024px) {
-  #ads-right {
+  #sponsor-rail {
     display: block !important;
     flex: 0 0 300px !important;
     width: 300px !important;
