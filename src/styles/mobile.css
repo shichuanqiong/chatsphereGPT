@@ -259,6 +259,14 @@
   }
 }
 
+/* 手机端表单 select 高度修复 */
+@media (max-width: 767px) {
+  select {
+    height: auto;
+    min-height: 44px;
+  }
+}
+
 /* === Mobile-only: Avatar menu styling & header truncation safeguards === */
 @media (max-width: 768px) {
   /* 头像菜单：风格统一（若 JSX 未加够类，可用这些兜底） */
