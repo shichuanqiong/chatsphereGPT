@@ -43,12 +43,38 @@ export function useOnlineUsers() {
           sampleKeys: Object.keys(presenceVal).slice(0, 3),
         });
 
-        // 过滤出在线用户 (state === 'online')
+        // 过滤出在线用户 (state === 'online' AND lastSeen < 5分钟)
+        const now = Date.now();
+        const timeout = 5 * 60 * 1000; // 5分钟
+        
         const onlineUids = Object.entries(presenceVal)
-          .filter(([, data]: any) => data?.state === 'online')
+          .filter(([, data]: any) => {
+            // ★ 修复：必须同时满足两个条件
+            // 1. state === 'online'
+            // 2. lastSeen 在 5 分钟内（防止显示陈旧的 state 值）
+            const state = data?.state;
+            const lastSeen = data?.lastSeen ?? 0;
+            const isActive = state === 'online' && (now - lastSeen < timeout);
+            return isActive;
+          })
           .map(([uid]) => uid as string);
 
         console.log('[useOnlineUsers] online users count:', onlineUids.length);
+        console.log('[useOnlineUsers] sample presence data:', {
+          total: Object.keys(presenceVal).length,
+          samples: Object.entries(presenceVal).slice(0, 5).map(([uid, data]: any) => {
+            const now2 = Date.now();
+            const lastSeen = data?.lastSeen ?? 0;
+            const isActive = data?.state === 'online' && (now2 - lastSeen < timeout);
+            return {
+              uid: uid.slice(0, 8),
+              state: data?.state,
+              lastSeen: lastSeen > 0 ? `${Math.round((now2 - lastSeen) / 1000)}s ago` : 'N/A',
+              isActive: isActive,
+            };
+          }),
+          onlineCount: onlineUids.length,
+        });
 
         if (onlineUids.length === 0) {
           console.log('[useOnlineUsers] no online users, returning empty array');
