@@ -15,6 +15,8 @@ const rtdb = admin.database();
 const app = express();
 const allowedOrigins = [
   'https://shichuanqiong.github.io',
+  'https://talkisphere.com',
+  'https://www.talkisphere.com',
   'https://chatsphere.live',
   'https://www.chatsphere.live',
   'http://localhost:3000',
@@ -417,7 +419,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 主页 - 最高优先级
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>daily</changefreq>\n';
     sitemapXml += '    <priority>1.0</priority>\n';
@@ -425,7 +427,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 登录页
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/login</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/login</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>weekly</changefreq>\n';
     sitemapXml += '    <priority>0.8</priority>\n';
@@ -433,7 +435,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 房间列表页面
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/rooms</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/rooms</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>hourly</changefreq>\n';
     sitemapXml += '    <priority>0.9</priority>\n';
@@ -441,7 +443,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 直消息页面
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/dm</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/dm</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>daily</changefreq>\n';
     sitemapXml += '    <priority>0.8</priority>\n';
@@ -449,7 +451,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 博客页面
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/blog</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/blog</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>weekly</changefreq>\n';
     sitemapXml += '    <priority>0.7</priority>\n';
@@ -457,7 +459,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 隐私政策
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/privacy</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/privacy</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>monthly</changefreq>\n';
     sitemapXml += '    <priority>0.6</priority>\n';
@@ -465,7 +467,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     
     // 服务条款
     sitemapXml += '  <url>\n';
-    sitemapXml += '    <loc>https://chatsphere.live/terms</loc>\n';
+    sitemapXml += '    <loc>https://talkisphere.com/terms</loc>\n';
     sitemapXml += `    <lastmod>${today}</lastmod>\n`;
     sitemapXml += '    <changefreq>monthly</changefreq>\n';
     sitemapXml += '    <priority>0.6</priority>\n';
@@ -474,7 +476,7 @@ app.post('/admin/seo/generate-sitemap', async (_req: Request, res: Response) => 
     // 活跃房间页面
     activeRooms.forEach(roomId => {
       sitemapXml += '  <url>\n';
-      sitemapXml += `    <loc>https://chatsphere.live/r/${roomId}</loc>\n`;
+      sitemapXml += `    <loc>https://talkisphere.com/r/${roomId}</loc>\n`;
       sitemapXml += `    <lastmod>${today}</lastmod>\n`;
       sitemapXml += '    <changefreq>daily</changefreq>\n';
       sitemapXml += '    <priority>0.7</priority>\n';
