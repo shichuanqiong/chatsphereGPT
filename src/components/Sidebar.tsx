@@ -53,29 +53,30 @@ export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: {
     };
   }, [uid]);
 
+  // ★ 共享逻辑：计算在线用户列表（与 Home.tsx 逻辑一致）
   const onlineUsers = useMemo(() => {
     const now = Date.now();
     const timeout = 5 * 60 * 1000; // 5 分钟超时
     const arr = Object.keys(online)
       .filter(k => {
-        // ★ 修复：添加 lastSeen 超时检查，与 Home.tsx 逻辑一致
+        // ★ 核心过滤逻辑：state === 'online' AND lastSeen < 5min AND not self
         const lastSeen = online[k]?.lastSeen ?? 0;
-        return online[k]?.state === 'online' && now - lastSeen < timeout;
+        return online[k]?.state === 'online' && now - lastSeen < timeout && k !== uid;
       })
       .map(k => ({ uid: k, ...profiles[k] }))
       .filter(Boolean);
     return arr.filter(u => genderFilter === 'all' ? true : (u?.gender === genderFilter));
-  }, [online, profiles, genderFilter]);
+  }, [online, profiles, genderFilter, uid]);
 
   const onlineCount = useMemo(() => {
     const now = Date.now();
-    const timeout = 5 * 60 * 1000; // 5 分钟超时
+    const timeout = 5 * 60 * 1000;
     return Object.keys(online).filter(k => {
-      // ★ 修复：添加 lastSeen 超时检查
+      // ★ 核心过滤逻辑
       const lastSeen = online[k]?.lastSeen ?? 0;
-      return online[k]?.state === 'online' && now - lastSeen < timeout;
+      return online[k]?.state === 'online' && now - lastSeen < timeout && k !== uid;
     }).length;
-  }, [online]);
+  }, [online, uid]);
 
   function toggleFilter(v: string) {
     setGenderFilter(v);

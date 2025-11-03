@@ -10,6 +10,7 @@ import { auth, db, presenceOnline, startPresenceHeartbeat } from '../firebase';
 import Composer, { type ComposerRef } from '../components/Composer';
 import Header from '../components/Header';
 import { useSoundToggle } from '../hooks/useSoundToggle';
+import { useOnlineUsers, useOnlineCount } from '../hooks/useOnlineUsers';
 import { Sound } from '../lib/sound';
 import CollapseSection from '../components/CollapseSection';
 import { useReadState, incrementRoomUnread, incrementThreadUnread } from '../hooks/useReadState';
@@ -597,14 +598,9 @@ export default function Home() {
     return () => { off1(); off2(); off3(); off4(); off5(); off6(); off7(); };
   }, [uid]);
 
-  // 在线用户（5 分钟内活跃 + 性别过滤 + 排除自己）
-  const onlineUsers = useMemo(() => {
-    const now = Date.now();
-    const alive = Object.keys(presence).filter((k) => now - (presence[k]?.lastSeen || 0) < 5 * 60 * 1000);
-    // ✅ 修复：即使 profile 还没加载，也用 uid 作为 fallback 创建临时 profile
-    const people = alive.map((k) => profiles[k] || { uid: k, nickname: `User ${k.slice(0, 6)}` }).filter(Boolean) as Profile[];
-    return people.filter((p) => p.uid !== uid && (genderFilter === 'all' ? true : p.gender === genderFilter));
-  }, [presence, profiles, genderFilter, uid]);
+  // ★ 使用共享逻辑计算在线用户列表（Desktop 和 Mobile 统一）
+  const onlineUsers = useOnlineUsers(presence, profiles, genderFilter, uid);
+  const _onlineCount = useOnlineCount(presence, uid);
 
   // 朋友列表（从 profiles 中筛选）
   const friendsList = useMemo(() => {
