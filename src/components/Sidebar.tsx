@@ -11,14 +11,17 @@ export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: {
   const uid = (window as any)._uid;
   const [rooms, setRooms] = useState<any[]>([]);
   const [friends, setFriends] = useState<any>({});
-  const [genderFilter, setGenderFilter] = useState(localStorage.getItem('genderFilter') || 'all');
+  // ★ 修复：确保 genderFilter 初始值总是有效的 ('all' | 'male' | 'female')
+  const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>(
+    (localStorage.getItem('genderFilter') as 'all' | 'male' | 'female') || 'all'
+  );
 
   // ★ 使用统一的在线用户数据源 Hook（与 Desktop 完全相同）
   const { users: allOnlineUsers, loading: onlineUsersLoading } = useOnlineUsers();
-  const onlineUsers = useFilteredOnlineUsers(allOnlineUsers, genderFilter as 'all' | 'male' | 'female', uid);
+  const onlineUsers = useFilteredOnlineUsers(allOnlineUsers, genderFilter, uid);
   const onlineCount = allOnlineUsers.length;
 
-  console.log('[Sidebar] onlineUsers length =', onlineUsers.length, 'allOnlineUsers:', allOnlineUsers);
+  console.log('[Sidebar] onlineUsers length =', onlineUsers.length, 'allOnlineUsers.length:', allOnlineUsers.length, 'genderFilter:', genderFilter, 'uid:', uid);
 
   useEffect(() => {
     const offRooms = onValue(ref(db, paths.rooms), snap => {
@@ -56,7 +59,7 @@ export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: {
   }, [uid]);
 
   function toggleFilter(v: string) {
-    setGenderFilter(v);
+    setGenderFilter(v as 'all' | 'male' | 'female');
     localStorage.setItem('genderFilter', v);
   }
 
