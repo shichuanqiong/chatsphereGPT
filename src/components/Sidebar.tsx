@@ -8,7 +8,9 @@ import { paths } from '../utils/db';
 import Avatar from './Avatar';
 
 export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: { currentRoom?: string, onSelectRoom: (id: string) => void, onUserSelected?: (user: any) => void }) {
+  console.log('[Sidebar] ★ Component render start');
   const uid = (window as any)._uid;
+  console.log('[Sidebar] ★ uid:', uid);
   const [rooms, setRooms] = useState<any[]>([]);
   const [friends, setFriends] = useState<any>({});
   // ★ 修复：确保 genderFilter 初始值总是有效的 ('all' | 'male' | 'female')
