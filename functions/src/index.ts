@@ -87,30 +87,32 @@ app.use((req: Request, res: Response, next) => {
 
 // ============ API 端点 ============
 
-// 1) 汇总指标 - 从 RTDB 读取实时数据
+// 1) 获取在线用户数
 app.get('/admin/metrics/summary', async (_req: Request, res: Response) => {
   try {
-    // 读取在线用户数（from /presence）
+    // 获取在线用户数：从 /presence 读取
     const presenceSnap = await rtdb.ref('/presence').get();
-    const presence = presenceSnap.val() || {};
-    const onlineNow = Object.values(presence).filter(
-      (u: any) => u && u.state === 'online'
-    ).length;
+    const presenceData = presenceSnap.val() || {};
+    
+    console.log('[admin/metrics/summary] presenceData keys:', Object.keys(presenceData));
+    console.log('[admin/metrics/summary] presenceData sample:', Object.entries(presenceData).slice(0, 3));
 
-    // 读取消息数据（使用现有函数）
+    // ★ 修复：修正 null 检查，确保每个 presence 记录都有效
+    const onlineNow = Object.values(presenceData).filter((u: any) => {
+      if (!u || typeof u !== 'object') return false;
+      console.log('[admin/metrics/summary] Checking presence record:', u);
+      return u.state === 'online';  // 注意：state 可能是布尔值 true，或字符串 'online'
+    }).length;
+
+    console.log('[admin/metrics/summary] onlineNow calculated:', onlineNow);
+
+    // 计算消息数据
     const msgData = await countMessages24hFromRTDB();
-    const msgCount = msgData.total || 0;
-
-    // 计算 DAU（使用现有函数）
+    
+    // 计算 DAU
     const dau = await calculateDAUFromRTDB();
 
-    console.log(`[admin/metrics/summary] online=${onlineNow}, msg24h=${msgCount}, dau=${dau}`);
-
-    res.json({
-      online: onlineNow,
-      msg24h: msgCount,
-      dau: dau,
-    });
+    res.json({ online: onlineNow, msg24h: msgData.total || 0, dau: dau });
   } catch (err: any) {
     console.error('[admin/metrics/summary] Error:', err);
     res.status(500).json({ error: err.message });
@@ -172,13 +174,17 @@ app.get('/admin/users', async (_req: Request, res: Response) => {
     const presenceSnap = await rtdb.ref('/presence').get();
     const presenceData = presenceSnap.val() || {};
     
+    console.log('[admin/users] profilesData count:', Object.keys(profilesData).length);
+    console.log('[admin/users] presenceData count:', Object.keys(presenceData).length);
+    console.log('[admin/users] statsData count:', Object.keys(statsData).length);
+    
     const now = Date.now();
     const timeout = 60 * 1000;
     
     const users = Object.entries(profilesData).map(([uid, data]: [string, any]) => {
       const presence = presenceData[uid];
       const lastSeen = presence?.lastSeen ?? 0;
-      const isOnline = presence?.state === 'online' && now - lastSeen < timeout;
+      const isOnline = presence?.state === 'online';
       
       // 从 profilesStats 读取统计数据
       const stats = statsData[uid] || {};
@@ -210,6 +216,9 @@ app.get('/admin/rooms', async (_req: Request, res: Response) => {
     const roomsSnap = await rtdb.ref('/rooms').get();
     const roomsData = roomsSnap.val() || {};
     
+    console.log('[admin/rooms] roomsData count:', Object.keys(roomsData).length);
+    console.log('[admin/rooms] roomsData sample keys:', Object.keys(roomsData).slice(0, 3));
+    
     const now = Date.now();
     const eightHoursAgo = now - (8 * 60 * 60 * 1000);
     
@@ -218,7 +227,7 @@ app.get('/admin/rooms', async (_req: Request, res: Response) => {
         // 过滤条件：
         // 1. 官方房间保留
         // 2. 非官方房间：未过期（expiresAt 或 createdAt + 8h > now）
-        if (data.isOfficial === true) {
+        if (data.isOfficial === true || data.type === 'official') {
           return true;
         }
         
@@ -230,16 +239,17 @@ app.get('/admin/rooms', async (_req: Request, res: Response) => {
         return {
           id,
           name: data.name || '未命名房间',
-          type: data.type || data.isOfficial ? 'official' : 'user',
+          type: (data.isOfficial || data.type === 'official') ? 'official' : 'user',
           description: data.description || '',
           memberCount: data.memberCount || 0,
           messageCount: data.messageCount || 0,
           createdAt: data.createdAt,
           createdBy: data.createdBy || data.ownerId,
-          isOfficial: data.isOfficial,
+          isOfficial: data.isOfficial || data.type === 'official',
         };
       });
     
+    console.log(`[admin/rooms] Returned ${rooms.length} rooms (including ${rooms.filter(r => r.isOfficial).length} official)`);
     res.json({ rooms });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
