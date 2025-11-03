@@ -10,7 +10,7 @@ import { auth, db, presenceOnline, startPresenceHeartbeat } from '../firebase';
 import Composer, { type ComposerRef } from '../components/Composer';
 import Header from '../components/Header';
 import { useSoundToggle } from '../hooks/useSoundToggle';
-import { useOnlineUsers, useOnlineCount } from '../hooks/useOnlineUsers';
+import { useOnlineUsers, useFilteredOnlineUsers } from '../hooks/useOnlineUsers';
 import { Sound } from '../lib/sound';
 import CollapseSection from '../components/CollapseSection';
 import { useReadState, incrementRoomUnread, incrementThreadUnread } from '../hooks/useReadState';
@@ -598,9 +598,11 @@ export default function Home() {
     return () => { off1(); off2(); off3(); off4(); off5(); off6(); off7(); };
   }, [uid]);
 
-  // ★ 使用共享逻辑计算在线用户列表（Desktop 和 Mobile 统一）
-  const onlineUsers = useOnlineUsers(presence, profiles, genderFilter, uid);
-  const _onlineCount = useOnlineCount(presence, uid);
+  // ★ 使用统一的在线用户数据源（Desktop 和 Mobile 都用这个）
+  const { users: allOnlineUsers, loading: onlineUsersLoading } = useOnlineUsers();
+  const onlineUsers = useFilteredOnlineUsers(allOnlineUsers, genderFilter, uid);
+  
+  console.log('[Home] onlineUsers length =', onlineUsers.length, 'allOnlineUsers:', allOnlineUsers);
 
   // 朋友列表（从 profiles 中筛选）
   const friendsList = useMemo(() => {
