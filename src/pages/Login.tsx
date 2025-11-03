@@ -411,7 +411,7 @@ export default function Login() {
       <GlassCard className="w-[420px] p-8 animate-fade-in">
         <div className="text-center mb-6">
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-teal-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            ChatSphere
+            TalkiSphere
           </h1>
           <p className="text-white/70 text-center mt-3 text-lg">Real-time Social Chat Community</p>
         </div>
@@ -641,7 +641,7 @@ export default function Login() {
             <a className="hover:text-white transition-colors" href="/#/blog">Blog</a>
           </div>
           <div className="text-xs text-white/45">Background by Unsplash & Picsum</div>
-          <div className="text-xs text-white/40">© 2025 ChatSphere</div>
+          <div className="text-xs text-white/40">© 2025 TalkiSphere</div>
         </div>
       </GlassCard>
 
@@ -662,7 +662,7 @@ export default function Login() {
 
               <div className="text-white/80 space-y-4 text-sm leading-relaxed">
                 <p><strong>Last Updated: October 31, 2025</strong></p>
-                <p>ChatSphere values your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our services.</p>
+                <p>TalkiSphere values your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our services.</p>
 
                 <div>
                   <h3 className="text-cyan-300 font-semibold mb-2">1. Information We Collect</h3>
@@ -680,7 +680,7 @@ export default function Login() {
                   <p className="text-white/70">We use the collected information to:</p>
                   <ul className="list-disc list-inside text-white/70 space-y-1 ml-2">
                     <li>Authenticate users and manage accounts.</li>
-                    <li>Operate and improve the ChatSphere platform.</li>
+                    <li>Operate and improve the TalkiSphere platform.</li>
                     <li>Detect and prevent fraud, abuse, or security risks.</li>
                     <li>Analyze usage trends and enhance user experience.</li>
                   </ul>
@@ -707,12 +707,12 @@ export default function Login() {
 
                 <div>
                   <h3 className="text-cyan-300 font-semibold mb-2">5. Third-Party Services</h3>
-                  <p className="text-white/70">ChatSphere uses third-party providers (such as Firebase, Google Analytics, and related APIs). These services may collect usage information independently and are governed by their own privacy policies.</p>
+                  <p className="text-white/70">TalkiSphere uses third-party providers (such as Firebase, Google Analytics, and related APIs). These services may collect usage information independently and are governed by their own privacy policies.</p>
                 </div>
 
                 <div>
                   <h3 className="text-cyan-300 font-semibold mb-2">6. Children's Privacy</h3>
-                  <p className="text-white/70">ChatSphere is not intended for individuals under the age of 13. If we become aware that a child has registered, we will promptly delete the related account and data.</p>
+                  <p className="text-white/70">TalkiSphere is not intended for individuals under the age of 13. If we become aware that a child has registered, we will promptly delete the related account and data.</p>
                 </div>
 
                 <div>

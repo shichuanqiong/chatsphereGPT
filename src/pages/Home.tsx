@@ -157,7 +157,7 @@ export default function Home() {
 
     const currentUid = uid || 'guest';
     const key = `cs_welcome_notice_v103_${currentUid}`;
-    const message = "👋 Welcome to ChatSphere — a place to connect, share, and have real conversations.\nPlease be respectful to others and help keep this space friendly.\nIf you ever encounter spam or inappropriate messages, you can use the Block or Kick options to protect yourself and the community.\nEnjoy your chat!";
+    const message = "👋 Welcome to TalkiSphere — a place to connect, share, and have real conversations.\nPlease be respectful to others and help keep this space friendly.\nIf you ever encounter spam or inappropriate messages, you can use the Block or Kick options to protect yourself and the community.\nEnjoy your chat!";
 
     try {
       const already = sessionStorage.getItem(key);
@@ -1105,7 +1105,7 @@ export default function Home() {
         <aside id="sidebar" className="w-[280px] shrink-0 h-full overflow-y-auto">
           <div id="sidebar-brand" className="sidebar-brand px-4 py-4 flex items-center gap-3">
             <Logo size={30} />
-            <span className="text-lg font-semibold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300">ChatSphere</span>
+            <span className="text-lg font-semibold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300">TalkiSphere</span>
           </div>
           {/* Online统计 - 在OFFICIAL ROOMS之前 */}
           <div className="px-4 py-2 text-white/70 text-sm mb-2">
@@ -1265,7 +1265,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col">
                   <div className="font-semibold">
-                    {currentRoom?.name || 'ChatSphere'}
+                    {currentRoom?.name || 'TalkiSphere'}
                   </div>
                   {currentRoom && (
                     <div className="text-xs text-white/60">

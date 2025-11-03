@@ -33,7 +33,7 @@ import { db } from "@/firebase";
 import { ref, onValue, push, set, remove, update } from "firebase/database";
 import { countMessages24hFromRTDB } from "@/lib/api";
 
-// ChatSphere — Admin Dashboard v0.2
+// TalkiSphere — Admin Dashboard v0.2
 // ▸ 深蓝 + 青紫色系  ▸ 折叠侧栏  ▸ 顶部导航  ▸ 渐变标题  ▸ Recharts 折线图
 
 const GRADIENT = "linear-gradient(135deg, #14E3C1 0%, #6A5CFF 100%)";
@@ -158,10 +158,10 @@ export default function AdminDashboard() {
   };
 
   const savedConfig = initSeoConfig();
-  const [seoTitle, setSeoTitle] = useState(savedConfig?.title || "ChatSphere — Free Real-time Chat Rooms & Anonymous Community");
-  const [seoDescription, setSeoDescription] = useState(savedConfig?.description || "Join ChatSphere to chat freely and instantly. Create rooms, talk to strangers or friends — no registration required.");
+  const [seoTitle, setSeoTitle] = useState(savedConfig?.title || "TalkiSphere — Free Real-time Chat Rooms & Anonymous Community");
+  const [seoDescription, setSeoDescription] = useState(savedConfig?.description || "Join TalkiSphere to chat freely and instantly. Create rooms, talk to strangers or friends — no registration required.");
   const [seoKeywords, setSeoKeywords] = useState(savedConfig?.keywords || "free chat room, anonymous chat, realtime chat, talk to strangers");
-  const [robotsTxt, setRobotsTxt] = useState(savedConfig?.robotsTxt || "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /*.js$\nDisallow: /*.css$\nDisallow: /*?*\n\nCrawl-delay: 1\nRequest-rate: 1/10s\n\nSitemap: https://chatsphere.live/sitemap.xml");
+  const [robotsTxt, setRobotsTxt] = useState(savedConfig?.robotsTxt || "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /*.js$\nDisallow: /*.css$\nDisallow: /*?*\n\nCrawl-delay: 1\nRequest-rate: 1/10s\n\nSitemap: https://talkisphere.com/sitemap.xml");
   const [sitemapLoading, setSitemapLoading] = useState(false);
   const [sitemapResult, setSitemapResult] = useState<any>(null);
   const [seoSaving, setSeoSaving] = useState(false);
@@ -540,7 +540,7 @@ export default function AdminDashboard() {
               <div className="h-9 w-9 rounded-2xl bg-white/10 flex items-center justify-center">💬</div>
               {!collapsed && (
                 <div>
-                  <div className="font-semibold">ChatSphere Admin</div>
+                  <div className="font-semibold">TalkiSphere Admin</div>
                   <div className="text-xs text-emerald-300">Owner</div>
                 </div>
               )}
@@ -1004,7 +1004,7 @@ export default function AdminDashboard() {
                       <label className="block text-sm font-medium text-zinc-300 mb-2">规范 URL (Canonical Base)</label>
                       <input
                         type="text"
-                        defaultValue="https://chatsphere.live"
+                        defaultValue="https://talkisphere.com"
                         className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
                       />
                     </div>
@@ -1012,7 +1012,7 @@ export default function AdminDashboard() {
                       <label className="block text-sm font-medium text-zinc-300 mb-2">Open Graph 图像 URL</label>
                       <input
                         type="text"
-                        defaultValue="https://chatsphere.live/og.jpg"
+                        defaultValue="https://talkisphere.com/og.jpg"
                         className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
                       />
                       <p className="text-xs text-zinc-500 mt-1">用于分享到 Facebook、LinkedIn 等平台</p>
@@ -1084,7 +1084,7 @@ export default function AdminDashboard() {
                 <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl p-6">
                   <h2 className="text-lg font-semibold mb-4">📱 预览 (Google Search)</h2>
                   <div className="bg-white text-black p-4 rounded-lg space-y-1">
-                    <div className="text-sm text-blue-600 font-semibold">https://chatsphere.live</div>
+                    <div className="text-sm text-blue-600 font-semibold">https://talkisphere.com</div>
                     <div className="text-xl font-semibold text-black">{seoTitle}</div>
                     <div className="text-sm text-gray-700">{seoDescription}</div>
                   </div>
@@ -1118,7 +1118,7 @@ export default function AdminDashboard() {
                           type="text"
                           value={newBlogSlug}
                           onChange={(e) => setNewBlogSlug(e.target.value)}
-                          placeholder="url-slug (例: welcome-to-chatsphere)"
+                          placeholder="url-slug (例: welcome-to-talkisphere)"
                           className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/10 focus:border-white/30 transition-all outline-none"
                         />
                       </div>

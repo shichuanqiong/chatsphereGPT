@@ -22,7 +22,7 @@ Crawl-delay: 1
 Request-rate: 1/10s
 
 # Sitemap
-Sitemap: https://chatsphere.live/sitemap.xml
+Sitemap: https://talkisphere.com/sitemap.xml
 
 # Google bot specific rules
 User-agent: Googlebot

@@ -12,7 +12,7 @@ export type SeoConfig = {
 };
 
 const DEFAULT_SEO: SeoConfig = {
-  title: 'ChatSphere — Real-time Social Chat Community',
+  title: 'TalkiSphere — Real-time Social Chat Community',
   description: 'A clean, respectful place to talk. Start rooms or DMs instantly.',
   keywords: 'chat, realtime, community, chatsphere',
   canonicalBase: 'https://chatsphere.app',
@@ -63,7 +63,7 @@ export function SeoProvider({ children }: { children: React.ReactNode }) {
           <script type="application/ld+json">{JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'WebSite',
-            name: 'ChatSphere',
+            name: 'TalkiSphere',
             url: cfg.canonicalBase,
             potentialAction: {
               '@type': 'SearchAction',

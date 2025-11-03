@@ -33,7 +33,7 @@ export default function Blog() {
           <Logo size={36} />
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              ChatSphere
+              TalkiSphere
             </h1>
             <p className="text-xs text-white/50">Stories & Insights</p>
           </div>

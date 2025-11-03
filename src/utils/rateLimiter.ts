@@ -1,5 +1,5 @@
 /**
- * Rate Limiter for ChatSphere
+ * Rate Limiter for TalkiSphere
  * - Manages slow mode and spam detection per user per room
  * - Local state for immediate feedback
  * - Optional RTDB sync for cross-tab/device consistency

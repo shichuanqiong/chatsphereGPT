@@ -96,7 +96,7 @@ export default function Header({
               </div>
               <div className="title text-[26px] font-semibold tracking-wide bg-clip-text text-transparent
                               bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300">
-                ChatSphere
+                TalkiSphere
               </div>
             </div>
           </div>
