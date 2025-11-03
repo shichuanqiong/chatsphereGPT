@@ -16,6 +16,17 @@ export interface OnlineUser {
   [key: string]: any;
 }
 
+// ★ 全局诊断对象，供手机端在 DevTools 中查看
+(window as any).__TALKISPHERE_DEBUG__ = (window as any).__TALKISPHERE_DEBUG__ || {};
+(window as any).__TALKISPHERE_DEBUG__.useOnlineUsers = {
+  lastUpdate: new Date().toISOString(),
+  presenceKeys: 0,
+  onlineUids: [],
+  profilesTotal: 0,
+  finalList: [] as any[],
+  error: null,
+};
+
 /**
  * ★ 统一的在线用户数据源 Hook
  * 
@@ -65,6 +76,10 @@ export function useOnlineUsers() {
           })),
         });
 
+        // ★ 更新全局诊断对象
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.lastUpdate = new Date().toISOString();
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.presenceKeys = totalPresence;
+
         // 过滤出在线用户
         const now = Date.now();
         const timeout = 5 * 60 * 1000;
@@ -83,10 +98,14 @@ export function useOnlineUsers() {
           onlineUids: onlineUids.slice(0, 5).map(u => u.substring(0, 8)),
         });
 
+        // ★ 更新全局诊断对象
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.onlineUids = onlineUids.slice(0, 10).map(u => u.substring(0, 8));
+
         if (onlineUids.length === 0) {
           console.log(`[useOnlineUsers] ★★ No online users found [${currentDevice}], returning empty`);
           setUsers([]);
           setLoading(false);
+          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.finalList = [];
           return;
         }
 
@@ -98,6 +117,9 @@ export function useOnlineUsers() {
         console.log(`[useOnlineUsers] ★★ Profiles received [${currentDevice}]:`, {
           totalProfiles: Object.keys(profilesVal).length,
         });
+
+        // ★ 更新全局诊断对象
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.profilesTotal = Object.keys(profilesVal).length;
 
         // 合并数据
         const list: OnlineUser[] = onlineUids.map((uid) => {
@@ -121,14 +143,25 @@ export function useOnlineUsers() {
         console.log(`[useOnlineUsers] ★★ Final list [${currentDevice}] (${list.length} users):`, 
           list.slice(0, 2).map(u => ({ uid: u.uid.substring(0, 8), nick: u.nickname }))
         );
+        
+        // ★ 更新全局诊断对象
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.finalList = list.slice(0, 5).map(u => ({
+          uid: u.uid.substring(0, 8),
+          nick: u.nickname,
+          gender: u.gender,
+        }));
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = null;
+
         setUsers(list);
         setLoading(false);
       } catch (err) {
         console.error(`[useOnlineUsers] ★★ ERROR [${currentDevice}]:`, err);
+        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = String(err);
         setLoading(false);
       }
     }, (error) => {
       console.error(`[useOnlineUsers] ★★ Firebase subscription error [${currentDevice}]:`, error);
+      (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = `Firebase subscription error: ${String(error)}`;
     });
 
     return () => {

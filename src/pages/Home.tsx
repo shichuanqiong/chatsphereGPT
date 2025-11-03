@@ -1069,6 +1069,21 @@ export default function Home() {
   const currentRoom = rooms.find(r => r.id === activeRoomId);
   const isRoomOwner = currentRoom && currentRoom.ownerId === uid;
 
+  // ★ 诊断面板（隐藏，按 Ctrl+Shift+D 显示/隐藏）
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setShowDebugPanel(prev => !prev);
+        console.log('[Home] Debug panel toggled:', !showDebugPanel);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showDebugPanel]);
+
   return (
     <div className="h-[100svh] w-full text-white relative overflow-hidden flex flex-col">
       <Header
@@ -1540,6 +1555,59 @@ export default function Home() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ 诊断面板 - 按 Ctrl+Shift+D 切换 */}
+      {showDebugPanel && (
+        <div className="fixed bottom-4 right-4 z-[2000] bg-black/90 border border-red-500/50 rounded-lg p-4 w-[320px] max-h-[400px] overflow-y-auto text-white text-xs font-mono">
+          <div className="flex justify-between items-center mb-3 border-b border-white/20 pb-2">
+            <div className="font-bold text-red-400">🔧 Debug Panel</div>
+            <button onClick={() => setShowDebugPanel(false)} className="text-white/60 hover:text-white">✕</button>
+          </div>
+          
+          <div className="space-y-2">
+            <div>
+              <div className="text-white/50">Device:</div>
+              <div className="text-cyan-400">{typeof navigator !== 'undefined' && /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'}</div>
+            </div>
+            
+            <div>
+              <div className="text-white/50">Auth UID:</div>
+              <div className="text-cyan-400">{auth.currentUser?.uid?.substring(0, 8) || 'none'}</div>
+            </div>
+
+            <div>
+              <div className="text-white/50">Window UID:</div>
+              <div className="text-cyan-400">{((window as any)._uid)?.substring(0, 8) || 'none'}</div>
+            </div>
+
+            <div>
+              <div className="text-white/50">Online Users Hook:</div>
+              <div className="text-yellow-400">
+                {(() => {
+                  const debug = (window as any).__TALKISPHERE_DEBUG__?.useOnlineUsers;
+                  if (!debug) return 'Not loaded';
+                  return `Keys: ${debug.presenceKeys}, Online: ${debug.onlineUids?.length || 0}, Profiles: ${debug.profilesTotal}`;
+                })()}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-white/50">OnlineUsers (from state):</div>
+              <div className="text-green-400">{onlineUsers.length} users</div>
+            </div>
+
+            <div>
+              <div className="text-white/50">Error:</div>
+              <div className="text-red-400">{((window as any).__TALKISPHERE_DEBUG__?.useOnlineUsers?.error) || 'None'}</div>
+            </div>
+
+            <div>
+              <div className="text-white/50">Last Update:</div>
+              <div className="text-white/70 text-[10px]">{((window as any).__TALKISPHERE_DEBUG__?.useOnlineUsers?.lastUpdate) || 'Never'}</div>
             </div>
           </div>
         </div>
