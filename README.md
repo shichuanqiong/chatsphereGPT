@@ -1,4 +1,4 @@
-# ChatSphere v0.2 — Firebase Realtime
+# TalkiSphere v0.2 — Firebase Realtime
 
 A modern, real-time chat application built with React, TypeScript, Firebase, and Tailwind CSS.
 
@@ -23,8 +23,8 @@ A modern, real-time chat application built with React, TypeScript, Firebase, and
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/shichuanqiong/chatsphereGPT.git
-   cd chatsphereGPT-v1.2
+   git clone https://github.com/shichuanqiong/talkisphere.git
+   cd talkisphere
    ```
 
 2. **Install dependencies**
@@ -43,6 +43,7 @@ A modern, real-time chat application built with React, TypeScript, Firebase, and
    VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
    VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
    VITE_FIREBASE_APP_ID=1:123456789:web:abc
+   VITE_PUBLIC_SITE_URL=https://talkisphere.com
    ```
 
 4. **Configure Firebase Console**
@@ -74,6 +75,8 @@ Output will be in the `dist/` directory.
 pnpm build
 pnpm deploy
 ```
+
+Visit: https://talkisphere.com
 
 ### Deploy to Firebase Hosting
 
