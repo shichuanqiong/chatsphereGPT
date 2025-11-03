@@ -1,6 +1,6 @@
 import Section from './Section';
 import { useEffect, useMemo, useState } from 'react';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { ref, onValue, push, serverTimestamp, set } from 'firebase/database';
 import { useOnlineUsers, useFilteredOnlineUsers } from '../hooks/useOnlineUsers';
 import { createRoomAndEnter } from '../lib/rooms';
@@ -8,9 +8,21 @@ import { paths } from '../utils/db';
 import Avatar from './Avatar';
 
 export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: { currentRoom?: string, onSelectRoom: (id: string) => void, onUserSelected?: (user: any) => void }) {
-  console.log('[Sidebar] ★ Component render start');
+  // ★ 诊断：确定设备类型
+  const isDevice = typeof navigator !== 'undefined' 
+    ? /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) 
+      ? 'mobile' 
+      : 'desktop'
+    : 'unknown';
+  
+  const authUid = auth.currentUser?.uid;
+  const windowUid = (window as any)._uid;
+  
+  console.log(`[Sidebar] ★ [${isDevice}] Component render start, auth.uid=${authUid?.substring(0, 8) || 'none'}, window._uid=${windowUid?.substring(0, 8) || 'none'}`);
+  
   const uid = (window as any)._uid;
-  console.log('[Sidebar] ★ uid:', uid);
+  console.log(`[Sidebar] ★ [${isDevice}] using uid:`, uid?.substring(0, 8) || 'NONE');
+  
   const [rooms, setRooms] = useState<any[]>([]);
   const [friends, setFriends] = useState<any>({});
   // ★ 修复：确保 genderFilter 初始值总是有效的 ('all' | 'male' | 'female')
@@ -23,7 +35,7 @@ export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: {
   const onlineUsers = useFilteredOnlineUsers(allOnlineUsers, genderFilter, uid);
   const onlineCount = allOnlineUsers.length;
 
-  console.log('[Sidebar] onlineUsers length =', onlineUsers.length, 'allOnlineUsers.length:', allOnlineUsers.length, 'genderFilter:', genderFilter, 'uid:', uid);
+  console.log(`[Sidebar] ★ [${isDevice}] onlineUsers length = ${onlineUsers.length}, allOnlineUsers.length = ${allOnlineUsers.length}, genderFilter = ${genderFilter}, uid = ${uid?.substring(0, 8) || 'none'}`);
 
   useEffect(() => {
     const offRooms = onValue(ref(db, paths.rooms), snap => {

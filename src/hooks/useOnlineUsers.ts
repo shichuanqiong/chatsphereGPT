@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { ref, onValue, get } from 'firebase/database';
 import { db } from '@/firebase';
+import { auth } from '@/firebase';
 
 export interface OnlineUser {
   uid: string;
@@ -31,10 +32,19 @@ export function useOnlineUsers() {
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
   
-  console.log('[useOnlineUsers] ★ Component rendered, current users:', users.length);
+  const currentUid = auth.currentUser?.uid;
+  const currentDevice = typeof navigator !== 'undefined' 
+    ? /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) 
+      ? 'mobile' 
+      : 'desktop'
+    : 'unknown';
+  
+  console.log(`[useOnlineUsers] ★ Component rendered [${currentDevice}], current users: ${users.length}, uid: ${currentUid?.substring(0, 8) || 'none'}`);
 
   useEffect(() => {
-    console.log('[useOnlineUsers] ★★ Hook mounted, setting up subscription');
+    const currentUid = auth.currentUser?.uid;
+    console.log(`[useOnlineUsers] ★★ Hook mounted [${currentDevice}], setting up subscription, uid: ${currentUid?.substring(0, 8) || 'NONE'}`);
+    
     const presenceRef = ref(db, 'presence');
     
     let callCount = 0;
@@ -45,10 +55,10 @@ export function useOnlineUsers() {
         const presenceVal = snap.val() || {};
         const totalPresence = Object.keys(presenceVal).length;
         
-        console.log(`[useOnlineUsers] ★★ onValue callback #${callCount}:`, {
+        console.log(`[useOnlineUsers] ★★ onValue callback #${callCount} [${currentDevice}]:`, {
           totalPresenceKeys: totalPresence,
           timestamp: new Date().toLocaleTimeString(),
-          presence: Object.entries(presenceVal).slice(0, 3).map(([uid, data]: any) => ({
+          first3: Object.entries(presenceVal).slice(0, 3).map(([uid, data]: any) => ({
             uid: uid.substring(0, 8),
             state: (data as any)?.state,
             lastSeen: (data as any)?.lastSeen,
@@ -68,24 +78,24 @@ export function useOnlineUsers() {
           })
           .map(([uid]) => uid);
 
-        console.log(`[useOnlineUsers] ★★ After filtering:`, {
+        console.log(`[useOnlineUsers] ★★ After 5min timeout filter [${currentDevice}]:`, {
           onlineCount: onlineUids.length,
-          onlineUids: onlineUids.slice(0, 5),
+          onlineUids: onlineUids.slice(0, 5).map(u => u.substring(0, 8)),
         });
 
         if (onlineUids.length === 0) {
-          console.log('[useOnlineUsers] ★★ No online users found, returning empty');
+          console.log(`[useOnlineUsers] ★★ No online users found [${currentDevice}], returning empty`);
           setUsers([]);
           setLoading(false);
           return;
         }
 
         // 拉取 profiles
-        console.log('[useOnlineUsers] ★★ Fetching profiles for', onlineUids.length, 'users');
+        console.log(`[useOnlineUsers] ★★ Fetching profiles for ${onlineUids.length} users [${currentDevice}]`);
         const profilesSnap = await get(ref(db, 'profiles'));
         const profilesVal = profilesSnap.val() || {};
 
-        console.log('[useOnlineUsers] ★★ Profiles received:', {
+        console.log(`[useOnlineUsers] ★★ Profiles received [${currentDevice}]:`, {
           totalProfiles: Object.keys(profilesVal).length,
         });
 
@@ -108,22 +118,24 @@ export function useOnlineUsers() {
           };
         });
 
-        console.log(`[useOnlineUsers] ★★ Final list (${list.length} users):`, list.slice(0, 2));
+        console.log(`[useOnlineUsers] ★★ Final list [${currentDevice}] (${list.length} users):`, 
+          list.slice(0, 2).map(u => ({ uid: u.uid.substring(0, 8), nick: u.nickname }))
+        );
         setUsers(list);
         setLoading(false);
       } catch (err) {
-        console.error('[useOnlineUsers] ★★ ERROR:', err);
+        console.error(`[useOnlineUsers] ★★ ERROR [${currentDevice}]:`, err);
         setLoading(false);
       }
     }, (error) => {
-      console.error('[useOnlineUsers] ★★ Firebase subscription error:', error);
+      console.error(`[useOnlineUsers] ★★ Firebase subscription error [${currentDevice}]:`, error);
     });
 
     return () => {
-      console.log('[useOnlineUsers] ★★ Hook unmounting, unsubscribe called');
+      console.log(`[useOnlineUsers] ★★ Hook unmounting [${currentDevice}], unsubscribe called`);
       unsubscribe();
     };
-  }, []);
+  }, [currentDevice]);
 
   return { users, loading };
 }
@@ -137,6 +149,12 @@ export function useFilteredOnlineUsers(
   genderFilter: 'all' | 'male' | 'female' = 'all',
   currentUid: string = ''
 ): OnlineUser[] {
+  const currentDevice = typeof navigator !== 'undefined' 
+    ? /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) 
+      ? 'mobile' 
+      : 'desktop'
+    : 'unknown';
+
   return useMemo(() => {
     let filtered = users.filter((u) => u.uid !== currentUid);
 
@@ -144,6 +162,12 @@ export function useFilteredOnlineUsers(
       filtered = filtered.filter((u) => u.gender === genderFilter);
     }
 
+    console.log(`[useFilteredOnlineUsers] [${currentDevice}] after gender filter (${genderFilter}):`, {
+      input: users.length,
+      output: filtered.length,
+      currentUidExcluded: currentUid ? currentUid.substring(0, 8) : 'none',
+    });
+
     return filtered;
-  }, [users, genderFilter, currentUid]);
+  }, [users, genderFilter, currentUid, currentDevice]);
 }

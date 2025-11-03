@@ -14,6 +14,12 @@ import {
   serverTimestamp,
 } from 'firebase/database';
 
+// ★ Cache-bust 机制：确保手机端总是加载最新代码
+const CACHE_BUST_VERSION = '1.2.3-20251103';
+if (typeof window !== 'undefined') {
+  console.log('[Firebase] Cache-bust version:', CACHE_BUST_VERSION);
+}
+
 // Firebase 配置 - 使用旧项目 chatspheregpt
 const firebaseConfig = {
   apiKey: "AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENviIGc",
