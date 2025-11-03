@@ -32,15 +32,17 @@ export function useOnlineUsers() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[useOnlineUsers] Hook mounted, setting up subscription');
     const presenceRef = ref(db, 'presence');
     
     const unsubscribe = onValue(presenceRef, async (snap) => {
       try {
         const presenceVal = snap.val() || {};
         
-        console.log('[useOnlineUsers] presence snapshot:', {
+        console.log('[useOnlineUsers] ★ Presence snapshot received:', {
           totalKeys: Object.keys(presenceVal).length,
           sampleKeys: Object.keys(presenceVal).slice(0, 3),
+          timestamp: new Date().toLocaleTimeString(),
         });
 
         // 过滤出在线用户 (state === 'online' AND lastSeen < 5分钟)
@@ -49,9 +51,6 @@ export function useOnlineUsers() {
         
         const onlineUids = Object.entries(presenceVal)
           .filter(([, data]: any) => {
-            // ★ 修复：必须同时满足两个条件
-            // 1. state === 'online'
-            // 2. lastSeen 在 5 分钟内（防止显示陈旧的 state 值）
             const state = data?.state;
             const lastSeen = data?.lastSeen ?? 0;
             const isActive = state === 'online' && (now - lastSeen < timeout);
@@ -59,35 +58,25 @@ export function useOnlineUsers() {
           })
           .map(([uid]) => uid as string);
 
-        console.log('[useOnlineUsers] online users count:', onlineUids.length);
-        console.log('[useOnlineUsers] sample presence data:', {
-          total: Object.keys(presenceVal).length,
-          samples: Object.entries(presenceVal).slice(0, 5).map(([uid, data]: any) => {
-            const now2 = Date.now();
-            const lastSeen = data?.lastSeen ?? 0;
-            const isActive = data?.state === 'online' && (now2 - lastSeen < timeout);
-            return {
-              uid: uid.slice(0, 8),
-              state: data?.state,
-              lastSeen: lastSeen > 0 ? `${Math.round((now2 - lastSeen) / 1000)}s ago` : 'N/A',
-              isActive: isActive,
-            };
-          }),
+        console.log('[useOnlineUsers] ★ Filtered online users:', {
+          totalPresence: Object.keys(presenceVal).length,
           onlineCount: onlineUids.length,
+          uids: onlineUids.slice(0, 5),
         });
 
         if (onlineUids.length === 0) {
-          console.log('[useOnlineUsers] no online users, returning empty array');
+          console.log('[useOnlineUsers] ★ No online users, setting empty array');
           setUsers([]);
           setLoading(false);
           return;
         }
 
         // 一次性拉取所有 profile 数据
+        console.log('[useOnlineUsers] ★ Fetching profiles...');
         const profilesSnap = await get(ref(db, 'profiles'));
         const profilesVal = profilesSnap.val() || {};
 
-        console.log('[useOnlineUsers] profiles snapshot:', {
+        console.log('[useOnlineUsers] ★ Profiles fetched:', {
           totalProfiles: Object.keys(profilesVal).length,
         });
 
@@ -106,24 +95,28 @@ export function useOnlineUsers() {
             country: profile.country,
             age: profile.age,
             displayName: profile.displayName,
-            ...profile, // 包含其他 profile 字段
+            ...profile,
           };
         });
 
-        console.log('[useOnlineUsers] merged list:', {
+        console.log('[useOnlineUsers] ★ Final merged list:', {
           count: list.length,
           sample: list.slice(0, 2),
+          timestamp: new Date().toLocaleTimeString(),
         });
 
         setUsers(list);
         setLoading(false);
       } catch (err) {
-        console.error('[useOnlineUsers] Error fetching profiles:', err);
+        console.error('[useOnlineUsers] ★ Error:', err);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('[useOnlineUsers] Hook unmounted, unsubscribing');
+      unsubscribe();
+    };
   }, []);
 
   return { users, loading };
