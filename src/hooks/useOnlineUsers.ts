@@ -30,24 +30,34 @@ export interface OnlineUser {
 export function useOnlineUsers() {
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  console.log('[useOnlineUsers] ★ Component rendered, current users:', users.length);
 
   useEffect(() => {
-    console.log('[useOnlineUsers] Hook mounted, setting up subscription');
+    console.log('[useOnlineUsers] ★★ Hook mounted, setting up subscription');
     const presenceRef = ref(db, 'presence');
     
+    let callCount = 0;
+    
     const unsubscribe = onValue(presenceRef, async (snap) => {
+      callCount++;
       try {
         const presenceVal = snap.val() || {};
+        const totalPresence = Object.keys(presenceVal).length;
         
-        console.log('[useOnlineUsers] ★ Presence snapshot received:', {
-          totalKeys: Object.keys(presenceVal).length,
-          sampleKeys: Object.keys(presenceVal).slice(0, 3),
+        console.log(`[useOnlineUsers] ★★ onValue callback #${callCount}:`, {
+          totalPresenceKeys: totalPresence,
           timestamp: new Date().toLocaleTimeString(),
+          presence: Object.entries(presenceVal).slice(0, 3).map(([uid, data]: any) => ({
+            uid: uid.substring(0, 8),
+            state: (data as any)?.state,
+            lastSeen: (data as any)?.lastSeen,
+          })),
         });
 
-        // 过滤出在线用户 (state === 'online' AND lastSeen < 5分钟)
+        // 过滤出在线用户
         const now = Date.now();
-        const timeout = 5 * 60 * 1000; // 5分钟
+        const timeout = 5 * 60 * 1000;
         
         const onlineUids = Object.entries(presenceVal)
           .filter(([, data]: any) => {
@@ -56,31 +66,30 @@ export function useOnlineUsers() {
             const isActive = state === 'online' && (now - lastSeen < timeout);
             return isActive;
           })
-          .map(([uid]) => uid as string);
+          .map(([uid]) => uid);
 
-        console.log('[useOnlineUsers] ★ Filtered online users:', {
-          totalPresence: Object.keys(presenceVal).length,
+        console.log(`[useOnlineUsers] ★★ After filtering:`, {
           onlineCount: onlineUids.length,
-          uids: onlineUids.slice(0, 5),
+          onlineUids: onlineUids.slice(0, 5),
         });
 
         if (onlineUids.length === 0) {
-          console.log('[useOnlineUsers] ★ No online users, setting empty array');
+          console.log('[useOnlineUsers] ★★ No online users found, returning empty');
           setUsers([]);
           setLoading(false);
           return;
         }
 
-        // 一次性拉取所有 profile 数据
-        console.log('[useOnlineUsers] ★ Fetching profiles...');
+        // 拉取 profiles
+        console.log('[useOnlineUsers] ★★ Fetching profiles for', onlineUids.length, 'users');
         const profilesSnap = await get(ref(db, 'profiles'));
         const profilesVal = profilesSnap.val() || {};
 
-        console.log('[useOnlineUsers] ★ Profiles fetched:', {
+        console.log('[useOnlineUsers] ★★ Profiles received:', {
           totalProfiles: Object.keys(profilesVal).length,
         });
 
-        // 合并 presence + profile 数据
+        // 合并数据
         const list: OnlineUser[] = onlineUids.map((uid) => {
           const profile = profilesVal[uid] || {};
           const presence = presenceVal[uid] || {};
@@ -99,22 +108,19 @@ export function useOnlineUsers() {
           };
         });
 
-        console.log('[useOnlineUsers] ★ Final merged list:', {
-          count: list.length,
-          sample: list.slice(0, 2),
-          timestamp: new Date().toLocaleTimeString(),
-        });
-
+        console.log(`[useOnlineUsers] ★★ Final list (${list.length} users):`, list.slice(0, 2));
         setUsers(list);
         setLoading(false);
       } catch (err) {
-        console.error('[useOnlineUsers] ★ Error:', err);
+        console.error('[useOnlineUsers] ★★ ERROR:', err);
         setLoading(false);
       }
+    }, (error) => {
+      console.error('[useOnlineUsers] ★★ Firebase subscription error:', error);
     });
 
     return () => {
-      console.log('[useOnlineUsers] Hook unmounted, unsubscribing');
+      console.log('[useOnlineUsers] ★★ Hook unmounting, unsubscribe called');
       unsubscribe();
     };
   }, []);
