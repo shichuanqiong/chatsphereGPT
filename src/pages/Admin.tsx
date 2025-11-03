@@ -27,7 +27,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { useAnalyticsStream, useAdminUsers, useAdminRooms, useAdminReports } from "@/hooks/useAnalyticsStream";
+import { useAnalyticsStream, useAdminUsers, useAdminRooms, useAdminReports, useAdminStats } from "@/hooks/useAnalyticsStream";
 import AdminAPI from "@/lib/api";
 import { db } from "@/firebase";
 import { ref, onValue, push, set, remove, update } from "firebase/database";
@@ -210,6 +210,9 @@ export default function AdminDashboard() {
 
   // 实时分析数据
   const { data: liveMetrics, connected: metricsConnected } = useAnalyticsStream();
+  
+  // ★ 新增：从 RTDB 直接读取的管理统计数据
+  const { stats: adminStats, loading: adminStatsLoading, error: adminStatsError } = useAdminStats();
   
   // 从 RTDB 直接查询的消息统计（快速修）
   const [rtdbMetrics, setRtdbMetrics] = useState<{ total: number; topRooms: Array<{ name: string; count: number }>; dau: number }>({ total: 0, topRooms: [], dau: 0 });
@@ -566,12 +569,14 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl font-extrabold tracking-tight" style={{ background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Dashboard</h1>
                 <p className="text-zinc-400 mt-1">System overview and key metrics</p>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
-                  <Stat title="Online now" value={String(users.filter(u => u.status === 'online').length)} />
-                  <Stat title="Messages (24h)" value={String(rtdbMetrics.total ?? 0)} />
-                  <Stat title="DAU" value={String(rtdbMetrics.dau ?? 0)} />
-                  <Stat title="Total Users" value={String(users.length)} />
-                  <Stat title="Active Rooms" value={String(allRooms.length)} />
+                  <Stat title="Online now" value={String(adminStats?.onlineNow ?? 0)} />
+                  <Stat title="Messages (24h)" value={String(adminStats?.messages24h ?? 0)} />
+                  <Stat title="DAU" value={String(adminStats?.dau ?? 0)} />
+                  <Stat title="Total Users" value={String(adminStats?.totalUsers ?? 0)} />
+                  <Stat title="Active Rooms" value={String(adminStats?.activeRooms ?? 0)} />
                 </div>
+                {adminStatsError && <p className="text-red-400 text-sm mt-2">⚠ Error loading stats: {adminStatsError}</p>}
+                {adminStatsLoading && <p className="text-yellow-400 text-sm mt-2">⏳ Loading stats...</p>}
               </>
             )}
 

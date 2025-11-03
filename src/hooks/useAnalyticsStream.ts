@@ -224,3 +224,56 @@ export function useAdminReports() {
 
   return { reports, loading, error };
 }
+
+/**
+ * Hook for fetching admin statistics directly from RTDB
+ */
+export function useAdminStats() {
+  const [stats, setStats] = useState<{
+    totalUsers: number;
+    onlineNow: number;
+    activeRooms: number;
+    messages24h: number;
+    dau: number;
+    error?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    let interval: NodeJS.Timeout | null = null;
+
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const { getAdminStats } = await import("@/lib/adminDataService");
+        const data = await getAdminStats();
+        if (mounted) {
+          setStats(data);
+          setError(null);
+        }
+      } catch (err: any) {
+        console.error('[useAdminStats] Error:', err);
+        if (mounted) {
+          setError(err.message || 'Failed to fetch admin stats');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    // 立即获取一次
+    fetchStats();
+
+    // 每 30 秒刷新一次
+    interval = setInterval(fetchStats, 30000);
+
+    return () => {
+      mounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  return { stats, loading, error };
+}
