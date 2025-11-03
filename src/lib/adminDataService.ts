@@ -101,3 +101,108 @@ export async function getAdminStats() {
     };
   }
 }
+
+/**
+ * ★ 新增：获取用户列表（直接从 RTDB）
+ */
+export async function getAdminUsersList() {
+  try {
+    // 1) 获取所有用户资料
+    const profilesSnap = await get(ref(db, "profiles"));
+    const profiles = profilesSnap.val() || {};
+
+    // 2) 获取在线状态
+    const presenceSnap = await get(ref(db, "presence"));
+    const presence = presenceSnap.val() || {};
+
+    // 3) 获取用户统计信息
+    const statsSnap = await get(ref(db, "profilesStats"));
+    const stats = statsSnap.val() || {};
+
+    const now = Date.now();
+    const timeout = 5 * 60 * 1000; // 5 分钟内活跃
+
+    // 4) 组合数据
+    const users = Object.entries(profiles).map(([uid, profileData]: [string, any]) => {
+      const presenceData = presence[uid] || {};
+      const lastSeen = presenceData?.lastSeen ?? 0;
+      const isOnline = presenceData?.state === 'online' && now - lastSeen < timeout;
+      const statData = stats[uid] || {};
+
+      return {
+        uid,
+        name: profileData?.nickname || profileData?.displayName || `User ${uid.slice(0, 6)}`,
+        email: profileData?.email || '',
+        status: isOnline ? 'online' : 'offline',
+        messageCount: statData?.messageCount ?? 0,
+        createdAt: profileData?.createdAt,
+        lastSeen: presenceData?.lastSeen,
+      };
+    });
+
+    console.log('[adminDataService] getAdminUsersList:', users.length, 'users');
+
+    return {
+      users,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (err: any) {
+    console.error('[adminDataService] getAdminUsersList Error:', err);
+    return {
+      users: [],
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+
+/**
+ * ★ 新增：获取房间列表（直接从 RTDB）
+ */
+export async function getAdminRoomsList() {
+  try {
+    // 1) 获取所有房间
+    const roomsSnap = await get(ref(db, "rooms"));
+    const roomsData = roomsSnap.val() || {};
+
+    const now = Date.now();
+    const eightHoursAgo = now - 8 * 60 * 60 * 1000;
+
+    // 2) 过滤并组合数据
+    const rooms = Object.entries(roomsData)
+      .filter(([_, roomData]: [string, any]) => {
+        // 官方房间永远显示
+        if (roomData?.isOfficial === true || roomData?.type === 'official') {
+          return true;
+        }
+        // 用户房间只显示未过期的
+        const expiresAt = roomData?.expiresAt || (roomData?.createdAt || 0) + 8 * 60 * 60 * 1000;
+        return expiresAt > now;
+      })
+      .map(([id, roomData]: [string, any]) => ({
+        id,
+        name: roomData?.name || 'Unnamed Room',
+        type: (roomData?.isOfficial || roomData?.type === 'official') ? 'official' : 'user',
+        description: roomData?.description || '',
+        memberCount: roomData?.memberCount || 0,
+        messageCount: roomData?.messageCount || 0,
+        createdAt: roomData?.createdAt,
+        createdBy: roomData?.createdBy || roomData?.ownerId,
+        isOfficial: roomData?.isOfficial || roomData?.type === 'official',
+      }));
+
+    console.log('[adminDataService] getAdminRoomsList:', rooms.length, 'rooms');
+
+    return {
+      rooms,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (err: any) {
+    console.error('[adminDataService] getAdminRoomsList Error:', err);
+    return {
+      rooms: [],
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

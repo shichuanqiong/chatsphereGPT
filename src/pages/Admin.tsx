@@ -27,7 +27,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { useAnalyticsStream, useAdminUsers, useAdminRooms, useAdminReports, useAdminStats } from "@/hooks/useAnalyticsStream";
+import { useAnalyticsStream, useAdminStats, useAdminUsersList, useAdminRoomsList, useAdminReports } from "@/hooks/useAnalyticsStream";
 import AdminAPI from "@/lib/api";
 import { db } from "@/firebase";
 import { ref, onValue, push, set, remove, update } from "firebase/database";
@@ -259,8 +259,8 @@ export default function AdminDashboard() {
   }, []);
   
   // 用户和房间实时数据
-  const { users: fetchedUsers, loading: usersLoading, refetch: refetchUsers } = useAdminUsers();
-  const { rooms: fetchedRooms, loading: roomsLoading } = useAdminRooms();
+  const { users: fetchedUsers, loading: usersLoading, refetch: refetchUsers } = useAdminUsersList();
+  const { rooms: fetchedRooms, loading: roomsLoading } = useAdminRoomsList();
   const { reports: fetchedReports, loading: reportsLoading } = useAdminReports();
 
   // 使用真实数据或备用数据

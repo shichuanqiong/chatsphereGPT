@@ -277,3 +277,107 @@ export function useAdminStats() {
 
   return { stats, loading, error };
 }
+
+/**
+ * Hook for fetching users list directly from RTDB
+ */
+export function useAdminUsersList() {
+  const [users, setUsers] = useState<Array<{
+    uid: string;
+    name: string;
+    email: string;
+    status: string;
+    messageCount: number;
+    createdAt?: number;
+    lastSeen?: number;
+  }> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    let interval: NodeJS.Timeout | null = null;
+
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const { getAdminUsersList } = await import("@/lib/adminDataService");
+        const data = await getAdminUsersList();
+        if (mounted) {
+          setUsers(data.users);
+          setError(data.error || null);
+        }
+      } catch (err: any) {
+        console.error('[useAdminUsersList] Error:', err);
+        if (mounted) {
+          setError(err.message || 'Failed to fetch users');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchUsers();
+    interval = setInterval(fetchUsers, 30000); // 每 30 秒刷新
+
+    return () => {
+      mounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  return { users, loading, error };
+}
+
+/**
+ * Hook for fetching rooms list directly from RTDB
+ */
+export function useAdminRoomsList() {
+  const [rooms, setRooms] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    description: string;
+    memberCount: number;
+    messageCount: number;
+    createdAt?: number;
+    createdBy?: string;
+    isOfficial?: boolean;
+  }> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    let interval: NodeJS.Timeout | null = null;
+
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        const { getAdminRoomsList } = await import("@/lib/adminDataService");
+        const data = await getAdminRoomsList();
+        if (mounted) {
+          setRooms(data.rooms);
+          setError(data.error || null);
+        }
+      } catch (err: any) {
+        console.error('[useAdminRoomsList] Error:', err);
+        if (mounted) {
+          setError(err.message || 'Failed to fetch rooms');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchRooms();
+    interval = setInterval(fetchRooms, 30000); // 每 30 秒刷新
+
+    return () => {
+      mounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  return { rooms, loading, error };
+}
