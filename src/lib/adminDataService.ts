@@ -16,12 +16,17 @@ export async function getAdminStats() {
 
     console.log('[adminDataService] profiles count:', totalUsers, 'sample:', Object.keys(profiles).slice(0, 3));
 
-    // 2) 获取在线用户数 → /presence 节点中 state === "online" 的数量
+    // 2) 获取在线用户数 → /presence 中 state === "online" 的数量
     const presenceSnap = await get(ref(db, "presence"));
     const presence = presenceSnap.val() || {};
-    const onlineNow = Object.values(presence).filter(
-      (u: any) => u && typeof u === 'object' && u.state === 'online'
-    ).length;
+    const now = Date.now();
+    const timeout = 5 * 60 * 1000; // 5 分钟超时
+    const onlineNow = Object.values(presence).filter((u: any) => {
+      if (!u || typeof u !== 'object') return false;
+      // ★ 修复：加入 lastSeen 超时检查，与 getAdminUsersList 逻辑一致
+      const lastSeen = u?.lastSeen ?? 0;
+      return u.state === 'online' && now - lastSeen < timeout;
+    }).length;
 
     console.log('[adminDataService] presence count:', Object.keys(presence).length, 'online:', onlineNow);
 

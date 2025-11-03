@@ -293,6 +293,7 @@ export function useAdminUsersList() {
   }> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -324,9 +325,14 @@ export function useAdminUsersList() {
       mounted = false;
       if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [refreshTrigger]);
 
-  return { users, loading, error };
+  return { 
+    users, 
+    loading, 
+    error,
+    refetch: () => setRefreshTrigger(prev => prev + 1)
+  };
 }
 
 /**
