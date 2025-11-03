@@ -54,17 +54,28 @@ export default function Sidebar({ currentRoom, onSelectRoom, onUserSelected }: {
   }, [uid]);
 
   const onlineUsers = useMemo(() => {
+    const now = Date.now();
+    const timeout = 5 * 60 * 1000; // 5 分钟超时
     const arr = Object.keys(online)
-      .filter(k => online[k].state === 'online')
+      .filter(k => {
+        // ★ 修复：添加 lastSeen 超时检查，与 Home.tsx 逻辑一致
+        const lastSeen = online[k]?.lastSeen ?? 0;
+        return online[k]?.state === 'online' && now - lastSeen < timeout;
+      })
       .map(k => ({ uid: k, ...profiles[k] }))
       .filter(Boolean);
     return arr.filter(u => genderFilter === 'all' ? true : (u?.gender === genderFilter));
   }, [online, profiles, genderFilter]);
 
-  const onlineCount = useMemo(() => 
-    Object.keys(online).filter(k => online[k].state === 'online').length, 
-    [online]
-  );
+  const onlineCount = useMemo(() => {
+    const now = Date.now();
+    const timeout = 5 * 60 * 1000; // 5 分钟超时
+    return Object.keys(online).filter(k => {
+      // ★ 修复：添加 lastSeen 超时检查
+      const lastSeen = online[k]?.lastSeen ?? 0;
+      return online[k]?.state === 'online' && now - lastSeen < timeout;
+    }).length;
+  }, [online]);
 
   function toggleFilter(v: string) {
     setGenderFilter(v);
