@@ -14,16 +14,15 @@ import {
   serverTimestamp,
 } from 'firebase/database';
 
-// Firebase 配置（从 Vite 环境变量读取）
+// Firebase 配置 - 使用旧项目 chatspheregpt
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyD-M3CM2Y0o9TkuYoPX1ShjUd3zENviIGc",
+  authDomain: "chatspheregpt.firebaseapp.com",
+  databaseURL: "https://chatspheregpt-default-rtdb.firebaseio.com",
+  projectId: "chatspheregpt",
+  storageBucket: "chatspheregpt.firebasestorage.app",
+  messagingSenderId: "421775686973",
+  appId: "1:421775686973:web:c10b0c50f1af2759569954"
 };
 
 let app: any;
