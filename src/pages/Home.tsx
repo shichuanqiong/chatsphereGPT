@@ -128,7 +128,7 @@ export default function Home() {
   // 用户自定义屏蔽（全局/当前房）
   const { blockedSet: roomBlocked, setBlocked: setRoomBlocked, isBlocked: isRoomBlocked } = useRoomBlocks(uid, activeRoomId || undefined);
   const { blockedSet: globalBlocked } = useGlobalBlocks(uid);
-  // 移除房间头部“Block”目标选择，改为消息/成员行内操作
+  // 移除房间头部"Block"目标选择，改为消息/成员行内操作
   const [dmId, setDmId] = useState<string>('');
   const [dmPeer, setDmPeer] = useState<Profile | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -664,7 +664,7 @@ export default function Home() {
         } catch {}
       });
     } else if (activeRoomId) {
-      const q = query(ref(db, `/messages/${activeRoomId}`), orderByChild('createdAt'), limitToLast(200));
+      const q = query(ref(db, `/messages/${activeRoomId}`), orderByChild('createdAt'), limitToLast(50));
       off = onValue(q, async (snap) => {
         const val = snap.val() || {};
         const arr: Message[] = Object.keys(val).map((k) => val[k]).sort((a,b) => (a.createdAt||0)-(b.createdAt||0));
@@ -748,8 +748,8 @@ export default function Home() {
     }
   };
 
-  // 新消息到达时：若“黏底”或是我自己发的，就滚到底（避免打断查看历史）
-  // 热修复：无条件把滚动条拉到底，先消除“向上滚”的现象
+  // 新消息到达时：若"黏底"或是我自己发的，就滚到底（避免打断查看历史）
+  // 热修复：无条件把滚动条拉到底，先消除"向上滚"的现象
   useEffect(() => {
     scrollToBottomHard();
   }, [messages.length]);
