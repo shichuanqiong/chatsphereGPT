@@ -81,6 +81,30 @@ if (initialized && auth) {
 // RTDB - 仅在初始化成功时设置
 export const db = initialized ? getDatabase(app) : null;
 
+// ★ 全局诊断对象
+(window as any).__FIREBASE_DEBUG__ = {
+  initialized,
+  dbExists: !!db,
+  authExists: !!auth,
+  firebaseConfig: {
+    projectId: firebaseConfig.projectId,
+    databaseURL: firebaseConfig.databaseURL,
+    authDomain: firebaseConfig.authDomain,
+  },
+  checkStatus: () => {
+    return {
+      initialized,
+      db: !!db,
+      auth: !!auth,
+      currentUser: auth?.currentUser?.uid || null,
+    };
+  }
+};
+
+if (typeof window !== 'undefined') {
+  console.log('[Firebase] 🔍 Diagnostic info available at window.__FIREBASE_DEBUG__');
+}
+
 /** ---------- Presence: 上线/心跳/下线 ---------- */
 
 /** 首次上线或恢复登录时调用：写入在线状态 + onDisconnect 清理 */
