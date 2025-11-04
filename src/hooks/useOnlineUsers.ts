@@ -67,82 +67,66 @@ export function useOnlineUsers() {
     
     const presenceRef = ref(db, 'presence');
     console.log(`[useOnlineUsers] ★★ Presence ref created:`, presenceRef);
+    console.log(`[useOnlineUsers] ★★ About to attach onValue listener to /presence`);
     
     let callCount = 0;
+    let listenerAttached = false;
     
     const unsubscribe = onValue(
       presenceRef, 
       async (snap) => {
+        listenerAttached = true;
         callCount++;
+        console.log(`[useOnlineUsers] ★★ ✅ onValue callback triggered! #${callCount}`);
         try {
+          console.log(`[useOnlineUsers] ★★ snap.exists():`, snap.exists());
+          console.log(`[useOnlineUsers] ★★ snap.val():`, snap.val());
+          
           const presenceVal = snap.val() || {};
           const totalPresence = Object.keys(presenceVal).length;
           
-          // ★ 额外诊断：检查 /presence 是否真的有数据
-          const presenceExists = snap.exists();
-          const presenceData = snap.val();
+          console.log(`[useOnlineUsers] ★★ Total presence entries: ${totalPresence}`);
+          console.log(`[useOnlineUsers] ★★ presenceVal keys:`, Object.keys(presenceVal).slice(0, 5));
           
-          console.log(`[useOnlineUsers] ★★ onValue RAW DATA [${currentDevice}]:`, {
-            snapExists: presenceExists,
-            presenceData: presenceData ? Object.keys(presenceData).slice(0, 5) : 'null/empty',
-            rawData: presenceData ? JSON.stringify(presenceData).substring(0, 200) : 'NO DATA',
-          });
-          
-          console.log(`[useOnlineUsers] ★★ onValue callback #${callCount} [${currentDevice}]:`, {
-            totalPresenceKeys: totalPresence,
-            timestamp: new Date().toLocaleTimeString(),
-            first3: Object.entries(presenceVal).slice(0, 3).map(([uid, data]: any) => ({
-              uid: uid.substring(0, 8),
-              state: (data as any)?.state,
-              lastSeen: (data as any)?.lastSeen,
-            })),
-          });
-
-          // ★ 更新全局诊断对象
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.lastUpdate = new Date().toISOString();
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.presenceKeys = totalPresence;
-
           // 过滤出在线用户
-          const now = Date.now();
-          const timeout = 5 * 60 * 1000;
-          
           const onlineUids = Object.entries(presenceVal)
-            .filter(([, data]: any) => {
+            .filter(([uid, data]: any) => {
               const state = data?.state;
-              // ★ 关键修复：只检查 state === 'online'，不使用 lastSeen 过滤
-              // 因为 lastSeen 可能是旧数据，不应该用来判断在线状态
-              const isOnline = state === 'online';
-              return isOnline;
+              const lastSeen = data?.lastSeen;
+              
+              // ★ 关键修复：检查 state === 'online' 且 lastSeen 在 5 分钟内
+              if (state !== 'online') return false;
+              
+              // 如果没有 lastSeen，认为离线
+              if (!lastSeen) return false;
+              
+              const now = Date.now();
+              const timeout = 5 * 60 * 1000; // 5 分钟
+              const isRecent = now - lastSeen < timeout;
+              
+              if (!isRecent) {
+                console.log(`[useOnlineUsers] Filtered out ${uid.substring(0, 8)}: lastSeen=${lastSeen}, now=${now}, diff=${now - lastSeen}ms`);
+              }
+              
+              return isRecent;
             })
             .map(([uid]) => uid);
 
-          console.log(`[useOnlineUsers] ★★ After 5min timeout filter [${currentDevice}]:`, {
-            onlineCount: onlineUids.length,
-            onlineUids: onlineUids.slice(0, 5).map(u => u.substring(0, 8)),
-          });
-
-          // ★ 更新全局诊断对象
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.onlineUids = onlineUids.slice(0, 10).map(u => u.substring(0, 8));
+          console.log(`[useOnlineUsers] ★★ Online after filter: ${onlineUids.length} users`);
 
           if (onlineUids.length === 0) {
-            console.log(`[useOnlineUsers] ★★ No online users found [${currentDevice}], returning empty`);
+            console.log(`[useOnlineUsers] ★★ No online users found, returning empty`);
             setUsers([]);
             setLoading(false);
-            (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.finalList = [];
             return;
           }
 
           // 拉取 profiles
-          console.log(`[useOnlineUsers] ★★ Fetching profiles for ${onlineUids.length} users [${currentDevice}]`);
+          console.log(`[useOnlineUsers] ★★ Fetching profiles for ${onlineUids.length} users`);
           const profilesSnap = await get(ref(db, 'profiles'));
           const profilesVal = profilesSnap.val() || {};
 
-          console.log(`[useOnlineUsers] ★★ Profiles received [${currentDevice}]:`, {
-            totalProfiles: Object.keys(profilesVal).length,
-          });
-
-          // ★ 更新全局诊断对象
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.profilesTotal = Object.keys(profilesVal).length;
+          console.log(`[useOnlineUsers] ★★ Profiles count: ${Object.keys(profilesVal).length}`);
 
           // 合并数据
           const list: OnlineUser[] = onlineUids.map((uid) => {
@@ -163,36 +147,25 @@ export function useOnlineUsers() {
             };
           });
 
-          console.log(`[useOnlineUsers] ★★ Final list [${currentDevice}] (${list.length} users):`, 
-            list.slice(0, 2).map(u => ({ uid: u.uid.substring(0, 8), nick: u.nickname }))
-          );
-          
-          // ★ 更新全局诊断对象
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.finalList = list.slice(0, 5).map(u => ({
-            uid: u.uid.substring(0, 8),
-            nick: u.nickname,
-            gender: u.gender,
-          }));
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = null;
-
+          console.log(`[useOnlineUsers] ★★ Final list: ${list.length} users`, list.slice(0, 3));
           setUsers(list);
           setLoading(false);
         } catch (err) {
-          console.error(`[useOnlineUsers] ★★ ERROR in onValue callback [${currentDevice}]:`, err);
-          (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = `Callback error: ${String(err)}`;
+          console.error(`[useOnlineUsers] ★★ ERROR in onValue callback:`, err);
           setLoading(false);
         }
       }, 
       (error) => {
-        console.error(`[useOnlineUsers] ★★ Firebase onValue error listener [${currentDevice}]:`, error);
+        console.error(`[useOnlineUsers] ★★ Firebase onValue error:`, error);
         console.error(`[useOnlineUsers] ★★ Error code:`, error.code);
         console.error(`[useOnlineUsers] ★★ Error message:`, error.message);
-        (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = `Firebase error: ${error.code} - ${error.message}`;
       }
     );
 
+    console.log(`[useOnlineUsers] ★★ Listener attachment complete. Will check if callback was triggered...`);
+
     return () => {
-      console.log(`[useOnlineUsers] ★★ Hook unmounting [${currentDevice}], unsubscribe called`);
+      console.log(`[useOnlineUsers] ★★ Cleanup: unsubscribe called`);
       unsubscribe();
     };
   }, [currentDevice]);
