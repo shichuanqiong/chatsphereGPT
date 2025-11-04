@@ -109,9 +109,10 @@ export function useOnlineUsers() {
           const onlineUids = Object.entries(presenceVal)
             .filter(([, data]: any) => {
               const state = data?.state;
-              const lastSeen = data?.lastSeen ?? 0;
-              const isActive = state === 'online' && (now - lastSeen < timeout);
-              return isActive;
+              // ★ 关键修复：只检查 state === 'online'，不使用 lastSeen 过滤
+              // 因为 lastSeen 可能是旧数据，不应该用来判断在线状态
+              const isOnline = state === 'online';
+              return isOnline;
             })
             .map(([uid]) => uid);
 
