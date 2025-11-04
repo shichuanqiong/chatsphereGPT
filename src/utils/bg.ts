@@ -129,13 +129,13 @@ function makePicsum(): string {
   return `https://picsum.photos/seed/${seed}/1920/1080?grayscale`;
 }
 
-// ★ 生成候选 URL（60% Unsplash + 40% Picsum）
+// ★ 生成候选 URL（20% Unsplash + 80% Picsum）
 export function nextCandidates(n = 2): string[] {
   const candidates: string[] = [];
   
-  // 混合生成：60% Unsplash，40% Picsum 备用
+  // 混合生成：20% Unsplash，80% Picsum 备用
   for (let i = 0; i < 3; i++) {
-    if (Math.random() < 0.6) {
+    if (Math.random() < 0.2) {
       candidates.push(makeUnsplash());
     } else {
       candidates.push(makePicsum());  // 使用单调 seed，保证新图
