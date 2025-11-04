@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { db } from '../firebase';
 import { onChildAdded, query, ref, limitToLast } from 'firebase/database';
+import { useToast } from './Toast';
 
 function isImageUrl(s: string) {
   return /^https?:\/\/\S+\.(gif|png|jpg|jpeg|webp)$/i.test(s);
@@ -9,7 +10,11 @@ function isImageUrl(s: string) {
 
 export default function MessageList({ path }: { path: string }) {
   const [items, setItems] = useState<any[]>([]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<Record<string, boolean>>({});
+  const [blockingId, setBlockingId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const { show } = useToast();
 
   useEffect(() => {
     const q = query(ref(db, path), limitToLast(200));
@@ -21,6 +26,15 @@ export default function MessageList({ path }: { path: string }) {
     });
     return () => off();
   }, [path]);
+
+  useEffect(() => {
+    const uid = (window as any)._uid;
+    if (!uid) return;
+    const offBlocks = onChildAdded(ref(db, `blocks/${uid}`), snap => {
+      setBlocks(prev => ({ ...prev, [snap.key]: true }));
+    });
+    return () => offBlocks?.();
+  }, []);
 
   const formatTime = (timestamp?: number | string) => {
     if (!timestamp) return '';
@@ -44,11 +58,45 @@ export default function MessageList({ path }: { path: string }) {
     return date.format('MM/DD HH:mm');
   };
 
+  const handleBlock = async (authorId: string) => {
+    setBlockingId(authorId);
+    try {
+      const { blockUser } = await import('../lib/social');
+      await blockUser(authorId);
+      setBlocks(prev => ({ ...prev, [authorId]: true }));
+      show('User blocked', 'success', 900);
+    } catch (e: any) {
+      show('Failed to block user', 'error', 900);
+    } finally {
+      setBlockingId(null);
+    }
+  };
+
+  const handleUnblock = async (authorId: string) => {
+    setBlockingId(authorId);
+    try {
+      const { unblockUser } = await import('../lib/social');
+      await unblockUser(authorId);
+      setBlocks(prev => {
+        const next = { ...prev };
+        delete next[authorId];
+        return next;
+      });
+      show('User unblocked', 'success', 900);
+    } catch (e: any) {
+      show('Failed to unblock user', 'error', 900);
+    } finally {
+      setBlockingId(null);
+    }
+  };
+
   return (
     <div className='flex-1 overflow-y-auto p-4 space-y-3'>
       {items.map(m => {
         const isSelf = m.authorId === (window as any)._uid;
         const timeLabel = formatTime(m.createdAt);
+        const isBlocked = blocks[m.authorId];
+        const isHovered = hoveredId === m.id;
 
         return (
           <div key={m.id} className={`max-w-[70%] ${isSelf ? 'ml-auto text-right' : ''}`}>
@@ -67,7 +115,11 @@ export default function MessageList({ path }: { path: string }) {
                 </div>
               </div>
             ) : (
-              <div className={`inline-flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
+              <div 
+                className={`inline-flex flex-col gap-2 ${isSelf ? 'items-end' : 'items-start'}`}
+                onMouseEnter={() => !isSelf && setHoveredId(m.id)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
                 <div
                   className={`px-4 py-2 rounded-2xl ${isSelf ? 'bg-indigo-500/80 text-white' : 'bg-white/10 text-white'} flex flex-col gap-1 max-w-full break-words`}
                 >
@@ -78,6 +130,15 @@ export default function MessageList({ path }: { path: string }) {
                     </span>
                   )}
                 </div>
+                {isHovered && !isSelf && (
+                  <button
+                    onClick={() => isBlocked ? handleUnblock(m.authorId) : handleBlock(m.authorId)}
+                    disabled={blockingId === m.authorId}
+                    className={`text-xs px-2 py-1 rounded ${isBlocked ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40' : 'bg-white/10 text-white hover:bg-white/20'} transition-colors disabled:opacity-50`}
+                  >
+                    {isBlocked ? '解除屏蔽' : '屏蔽'}
+                  </button>
+                )}
               </div>
             )}
           </div>
