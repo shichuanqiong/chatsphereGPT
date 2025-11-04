@@ -1,7 +1,7 @@
 {
   "rules": {
     ".read": "auth != null",
-    ".write": "auth != null",
+    ".write": false,
 
     "presence": {
       "$uid": {
@@ -14,7 +14,8 @@
     "profiles": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['uid']) && newData.child('uid').val() === $uid"
       }
     },
 
@@ -25,10 +26,18 @@
       }
     },
 
+    "roles": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
     "rooms": {
       "$roomId": {
         ".read": "auth != null",
-        ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)"
+        ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
+        ".validate": "newData.child('ownerId').exists()"
       }
     },
 
@@ -41,24 +50,42 @@
       }
     },
 
+    "roomsMeta": {
+      "$uid": {
+        "$roomId": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
     "messages": {
       "$roomId": {
-        ".read": "auth != null",
-        ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
+        "$msgId": {
+          ".read": "auth != null",
+          ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
+          ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
+        }
       }
     },
 
     "directMessages": {
       "$chatId": {
-        ".read": "auth != null && data.child('participants').hasChild(auth.uid)",
-        ".write": "auth != null && newData.child('authorId').val() === auth.uid"
+        "$msgId": {
+          ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($chatId).exists()",
+          ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
+          ".validate": "newData.hasChildren(['authorId', 'content'])"
+        }
       }
     },
 
     "dmThreads": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        "$chatId": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['participants'])"
+        }
       }
     },
 
@@ -89,6 +116,26 @@
     },
 
     "mutes": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "ads": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('profiles').child(auth.uid).child('isAdmin').val() === true"
+    },
+
+    "posts": {
+      "$postId": {
+        ".read": "auth != null",
+        ".write": "auth != null && newData.child('authorId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['authorId', 'content'])"
+      }
+    },
+
+    "rateLimits": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
