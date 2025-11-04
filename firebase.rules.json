@@ -57,7 +57,7 @@
       "$roomId": {
         "$uid": {
           ".read": "auth != null",
-          ".write": "auth != null && auth.uid === $uid"
+          ".write": "auth != null && (auth.uid === $uid || root.child('rooms').child($roomId).child('ownerId').val() === auth.uid)"
         }
       }
     },
