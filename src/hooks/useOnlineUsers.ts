@@ -66,6 +66,16 @@ export function useOnlineUsers() {
         const presenceVal = snap.val() || {};
         const totalPresence = Object.keys(presenceVal).length;
         
+        // ★ 额外诊断：检查 /presence 是否真的有数据
+        const presenceExists = snap.exists();
+        const presenceData = snap.val();
+        
+        console.log(`[useOnlineUsers] ★★ onValue RAW DATA [${currentDevice}]:`, {
+          snapExists: presenceExists,
+          presenceData: presenceData ? Object.keys(presenceData).slice(0, 5) : 'null/empty',
+          rawData: presenceData ? JSON.stringify(presenceData).substring(0, 200) : 'NO DATA',
+        });
+        
         console.log(`[useOnlineUsers] ★★ onValue callback #${callCount} [${currentDevice}]:`, {
           totalPresenceKeys: totalPresence,
           timestamp: new Date().toLocaleTimeString(),
