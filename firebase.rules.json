@@ -69,10 +69,10 @@
       }
     },
 
-    "directMessages": {
-      "$chatId": {
-        ".read": "auth != null && (root.child('dmThreads').child(auth.uid).child($chatId).exists())",
-        ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
+    "dmMessages": {
+      "$threadId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     },
 
