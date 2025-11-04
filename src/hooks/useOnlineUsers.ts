@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { ref, onValue, get } from 'firebase/database';
 import { db } from '@/firebase';
 import { auth } from '@/firebase';
+import { useServerTime } from './useServerTime';
 
 export interface OnlineUser {
   uid: string;
@@ -32,16 +33,12 @@ export interface OnlineUser {
  * 
  * Desktop (Home.tsx) 和 Mobile (Sidebar.tsx) 都使用这个 Hook
  * 确保两端从相同的 Firebase 路径 (/presence + /profiles) 读取数据
- * 
- * 核心流程：
- * 1. 订阅 /presence 变化
- * 2. 当 presence 变化时，自动拉取对应的 /profiles 数据
- * 3. 合并 presence 和 profile 信息
- * 4. 返回在线用户列表
+ * 使用 Firebase 服务器时间进行 5 分钟过滤，避免设备时间不同步
  */
 export function useOnlineUsers() {
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const serverNow = useServerTime(); // 使用 Firebase 服务器时间
   
   const currentUid = auth.currentUser?.uid;
   const currentDevice = typeof navigator !== 'undefined' 
@@ -50,94 +47,73 @@ export function useOnlineUsers() {
       : 'desktop'
     : 'unknown';
   
-  console.log(`[useOnlineUsers] ★ Component rendered [${currentDevice}], current users: ${users.length}, uid: ${currentUid?.substring(0, 8) || 'none'}`);
-  console.log(`[useOnlineUsers] ★ DB exists: ${!!db}, Auth exists: ${!!auth}`);
+  console.log(`[useOnlineUsers] ★ Component rendered [${currentDevice}], current users: ${users.length}, serverNow: ${serverNow}`);
 
   useEffect(() => {
-    const currentUid = auth.currentUser?.uid;
-    console.log(`[useOnlineUsers] ★★ Hook mounted [${currentDevice}], setting up subscription, uid: ${currentUid?.substring(0, 8) || 'NONE'}`);
-    console.log(`[useOnlineUsers] ★★ DB object:`, db ? 'EXISTS' : 'NULL', 'Auth object:', auth ? 'EXISTS' : 'NULL');
-    
     if (!db) {
-      console.error(`[useOnlineUsers] ★★ CRITICAL: db is NULL! Cannot set up listener`);
-      (window as any).__TALKISPHERE_DEBUG__.useOnlineUsers.error = 'db is NULL';
+      console.error(`[useOnlineUsers] ★★ CRITICAL: db is NULL!`);
       setLoading(false);
       return;
     }
     
     const presenceRef = ref(db, 'presence');
-    console.log(`[useOnlineUsers] ★★ Presence ref created:`, presenceRef);
-    console.log(`[useOnlineUsers] ★★ About to attach onValue listener to /presence`);
     
     let callCount = 0;
-    let listenerAttached = false;
-    
     const unsubscribe = onValue(
       presenceRef, 
       async (snap) => {
-        listenerAttached = true;
         callCount++;
-        console.log(`[useOnlineUsers] ★★ ✅ onValue callback triggered! #${callCount}`);
+        console.log(`[useOnlineUsers] ★★ onValue triggered #${callCount}, serverNow=${serverNow}`);
+        
         try {
-          console.log(`[useOnlineUsers] ★★ snap.exists():`, snap.exists());
-          console.log(`[useOnlineUsers] ★★ snap.val():`, snap.val());
-          
           const presenceVal = snap.val() || {};
           const totalPresence = Object.keys(presenceVal).length;
           
           console.log(`[useOnlineUsers] ★★ Total presence entries: ${totalPresence}`);
-          console.log(`[useOnlineUsers] ★★ presenceVal keys:`, Object.keys(presenceVal).slice(0, 5));
-          
-          // 过滤出在线用户
-          const now = Date.now();
-          const timeout = 5 * 60 * 1000; // 5 分钟
-          
-          console.log(`[useOnlineUsers] ★★ Current time: ${now}`);
-          console.log(`[useOnlineUsers] ★★ Timeout threshold: ${timeout}ms (5 minutes)`);
-          
-          // 先看一些样本数据，了解 lastSeen 的值
-          const sampleEntries = Object.entries(presenceVal).slice(0, 3);
-          console.log(`[useOnlineUsers] ★★ Sample entries:`, sampleEntries.map(([uid, data]: any) => ({
-            uid: uid.substring(0, 8),
-            state: data?.state,
-            lastSeen: data?.lastSeen,
-            type: typeof data?.lastSeen,
-            timeDiff: now - data?.lastSeen,
-            isRecent: now - data?.lastSeen < timeout
-          })));
-          
-          const onlineUids = Object.entries(presenceVal)
-            .filter(([uid, data]: any) => {
-              const state = data?.state;
-              const lastSeen = data?.lastSeen;
-              
-              // ★ 关键修复：检查 state === 'online' 且 lastSeen 在 5 分钟内
-              if (state !== 'online') return false;
-              
-              // 如果没有 lastSeen，认为离线
-              if (!lastSeen) return false;
-              
-              const isRecent = now - lastSeen < timeout;
-              
-              return isRecent;
-            })
-            .map(([uid]) => uid);
 
-          console.log(`[useOnlineUsers] ★★ Online after filter: ${onlineUids.length} users`);
+          // 5 分钟阈值
+          const FIVE_MIN = 5 * 60 * 1000;
+          
+          // 使用 Firebase 服务器时间进行过滤
+          // 如果 serverNow 还没准备好，先不过滤
+          let onlineUids: string[] = [];
+          
+          if (serverNow === null) {
+            // Server time not ready yet, show all online=true users as fallback
+            console.log(`[useOnlineUsers] ★★ serverNow is null, using state='online' as fallback`);
+            onlineUids = Object.entries(presenceVal)
+              .filter(([uid, data]: any) => data?.state === 'online')
+              .map(([uid]) => uid);
+          } else {
+            // Server time ready, apply 5-minute filter
+            onlineUids = Object.entries(presenceVal)
+              .filter(([uid, data]: any) => {
+                const state = data?.state;
+                const lastSeen = data?.lastSeen;
+                
+                if (state !== 'online') return false;
+                if (!lastSeen) return false;
+                
+                const delta = serverNow - lastSeen;
+                const isRecent = delta >= 0 && delta <= FIVE_MIN;
+                
+                return isRecent;
+              })
+              .map(([uid]) => uid);
+            
+            console.log(`[useOnlineUsers] ★★ Filtered with server time: ${presenceVal.length} total → ${onlineUids.length} recent`);
+          }
 
           if (onlineUids.length === 0) {
-            console.log(`[useOnlineUsers] ★★ No online users found, returning empty`);
+            console.log(`[useOnlineUsers] ★★ No online users found`);
             setUsers([]);
             setLoading(false);
             return;
           }
 
           // 拉取 profiles
-          console.log(`[useOnlineUsers] ★★ Fetching profiles for ${onlineUids.length} users`);
           const profilesSnap = await get(ref(db, 'profiles'));
           const profilesVal = profilesSnap.val() || {};
-
-          console.log(`[useOnlineUsers] ★★ Profiles count: ${Object.keys(profilesVal).length}`);
 
           // 合并数据
           const list: OnlineUser[] = onlineUids.map((uid) => {
@@ -158,35 +134,27 @@ export function useOnlineUsers() {
             };
           });
 
-          console.log(`[useOnlineUsers] ★★ Final list: ${list.length} users`, list.slice(0, 3));
+          console.log(`[useOnlineUsers] ★★ Final filtered list: ${list.length} users`);
           setUsers(list);
           setLoading(false);
         } catch (err) {
-          console.error(`[useOnlineUsers] ★★ ERROR in onValue callback:`, err);
+          console.error(`[useOnlineUsers] ★★ ERROR:`, err);
           setLoading(false);
         }
       }, 
       (error) => {
-        console.error(`[useOnlineUsers] ★★ Firebase onValue error:`, error);
-        console.error(`[useOnlineUsers] ★★ Error code:`, error.code);
-        console.error(`[useOnlineUsers] ★★ Error message:`, error.message);
+        console.error(`[useOnlineUsers] ★★ Firebase error:`, error);
       }
     );
 
-    console.log(`[useOnlineUsers] ★★ Listener attachment complete. Will check if callback was triggered...`);
-
-    return () => {
-      console.log(`[useOnlineUsers] ★★ Cleanup: unsubscribe called`);
-      unsubscribe();
-    };
-  }, [currentDevice]);
+    return () => unsubscribe();
+  }, [serverNow]); // Re-run when serverNow changes
 
   return { users, loading };
 }
 
 /**
  * 过滤式 Hook - 用于进行性别过滤等二次处理
- * 接收 users 数组和过滤条件，返回过滤后的结果
  */
 export function useFilteredOnlineUsers(
   users: OnlineUser[] = [],
@@ -200,32 +168,13 @@ export function useFilteredOnlineUsers(
     : 'unknown';
 
   return useMemo(() => {
-    console.log(`[useFilteredOnlineUsers] [${currentDevice}] Input:`, {
-      usersLength: users.length,
-      genderFilter,
-      currentUid: currentUid?.substring(0, 8) || 'none',
-      firstUser: users[0] ? { uid: users[0].uid.substring(0, 8), gender: users[0].gender } : null
-    });
-
-    let filtered = users.filter((u) => {
-      const isNotSelf = u.uid !== currentUid;
-      console.log(`[useFilteredOnlineUsers] [${currentDevice}] Checking ${u.uid.substring(0, 8)}: isNotSelf=${isNotSelf}`);
-      return isNotSelf;
-    });
-
-    console.log(`[useFilteredOnlineUsers] [${currentDevice}] After self-filter: ${filtered.length} users`);
+    let filtered = users.filter((u) => u.uid !== currentUid);
 
     if (genderFilter !== 'all') {
-      const beforeGender = filtered.length;
-      filtered = filtered.filter((u) => {
-        const matches = u.gender === genderFilter;
-        console.log(`[useFilteredOnlineUsers] [${currentDevice}] Gender check ${u.uid.substring(0, 8)}: gender=${u.gender}, filter=${genderFilter}, matches=${matches}`);
-        return matches;
-      });
-      console.log(`[useFilteredOnlineUsers] [${currentDevice}] After gender filter (${genderFilter}): ${beforeGender} → ${filtered.length} users`);
+      filtered = filtered.filter((u) => u.gender === genderFilter);
     }
 
-    console.log(`[useFilteredOnlineUsers] [${currentDevice}] Final output: ${filtered.length} users`);
+    console.log(`[useFilteredOnlineUsers] [${currentDevice}] Input: ${users.length}, After gender filter (${genderFilter}): ${filtered.length}`);
     return filtered;
   }, [users, genderFilter, currentUid, currentDevice]);
 }
