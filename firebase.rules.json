@@ -71,7 +71,7 @@
 
     "directMessages": {
       "$chatId": {
-        ".read": "auth != null && data.child('participants').hasChild(auth.uid)",
+        ".read": "auth != null && (root.child('dmThreads').child(auth.uid).child($chatId).exists())",
         ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
       }
     },
