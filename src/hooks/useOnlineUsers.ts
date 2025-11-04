@@ -89,6 +89,23 @@ export function useOnlineUsers() {
           console.log(`[useOnlineUsers] ★★ presenceVal keys:`, Object.keys(presenceVal).slice(0, 5));
           
           // 过滤出在线用户
+          const now = Date.now();
+          const timeout = 5 * 60 * 1000; // 5 分钟
+          
+          console.log(`[useOnlineUsers] ★★ Current time: ${now}`);
+          console.log(`[useOnlineUsers] ★★ Timeout threshold: ${timeout}ms (5 minutes)`);
+          
+          // 先看一些样本数据，了解 lastSeen 的值
+          const sampleEntries = Object.entries(presenceVal).slice(0, 3);
+          console.log(`[useOnlineUsers] ★★ Sample entries:`, sampleEntries.map(([uid, data]: any) => ({
+            uid: uid.substring(0, 8),
+            state: data?.state,
+            lastSeen: data?.lastSeen,
+            type: typeof data?.lastSeen,
+            timeDiff: now - data?.lastSeen,
+            isRecent: now - data?.lastSeen < timeout
+          })));
+          
           const onlineUids = Object.entries(presenceVal)
             .filter(([uid, data]: any) => {
               const state = data?.state;
@@ -100,13 +117,7 @@ export function useOnlineUsers() {
               // 如果没有 lastSeen，认为离线
               if (!lastSeen) return false;
               
-              const now = Date.now();
-              const timeout = 5 * 60 * 1000; // 5 分钟
               const isRecent = now - lastSeen < timeout;
-              
-              if (!isRecent) {
-                console.log(`[useOnlineUsers] Filtered out ${uid.substring(0, 8)}: lastSeen=${lastSeen}, now=${now}, diff=${now - lastSeen}ms`);
-              }
               
               return isRecent;
             })
@@ -189,18 +200,32 @@ export function useFilteredOnlineUsers(
     : 'unknown';
 
   return useMemo(() => {
-    let filtered = users.filter((u) => u.uid !== currentUid);
-
-    if (genderFilter !== 'all') {
-      filtered = filtered.filter((u) => u.gender === genderFilter);
-    }
-
-    console.log(`[useFilteredOnlineUsers] [${currentDevice}] after gender filter (${genderFilter}):`, {
-      input: users.length,
-      output: filtered.length,
-      currentUidExcluded: currentUid ? currentUid.substring(0, 8) : 'none',
+    console.log(`[useFilteredOnlineUsers] [${currentDevice}] Input:`, {
+      usersLength: users.length,
+      genderFilter,
+      currentUid: currentUid?.substring(0, 8) || 'none',
+      firstUser: users[0] ? { uid: users[0].uid.substring(0, 8), gender: users[0].gender } : null
     });
 
+    let filtered = users.filter((u) => {
+      const isNotSelf = u.uid !== currentUid;
+      console.log(`[useFilteredOnlineUsers] [${currentDevice}] Checking ${u.uid.substring(0, 8)}: isNotSelf=${isNotSelf}`);
+      return isNotSelf;
+    });
+
+    console.log(`[useFilteredOnlineUsers] [${currentDevice}] After self-filter: ${filtered.length} users`);
+
+    if (genderFilter !== 'all') {
+      const beforeGender = filtered.length;
+      filtered = filtered.filter((u) => {
+        const matches = u.gender === genderFilter;
+        console.log(`[useFilteredOnlineUsers] [${currentDevice}] Gender check ${u.uid.substring(0, 8)}: gender=${u.gender}, filter=${genderFilter}, matches=${matches}`);
+        return matches;
+      });
+      console.log(`[useFilteredOnlineUsers] [${currentDevice}] After gender filter (${genderFilter}): ${beforeGender} → ${filtered.length} users`);
+    }
+
+    console.log(`[useFilteredOnlineUsers] [${currentDevice}] Final output: ${filtered.length} users`);
     return filtered;
   }, [users, genderFilter, currentUid, currentDevice]);
 }
