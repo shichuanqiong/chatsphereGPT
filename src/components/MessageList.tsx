@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
-import { db } from '../firebase';
-import { onChildAdded, query, ref, limitToLast } from 'firebase/database';
+import { db, auth } from '../firebase';
+import { onChildAdded, query, ref, limitToLast, onValue } from 'firebase/database';
 import { useToast } from './Toast';
 
 function isImageUrl(s: string) {
@@ -14,27 +14,63 @@ export default function MessageList({ path }: { path: string }) {
   const [blocks, setBlocks] = useState<Record<string, boolean>>({});
   const [blockingId, setBlockingId] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { show } = useToast();
 
+  const uid = (window as any)._uid;
+  const currentUid = auth.currentUser?.uid;
+
+  // 诊断日志
+  useEffect(() => {
+    console.log('[MessageList] ★ Component init:', {
+      uid,
+      currentUid,
+      authUser: auth.currentUser?.email,
+      path,
+    });
+  }, []);
+
+  // 加载消息
   useEffect(() => {
     const q = query(ref(db, path), limitToLast(200));
     const arr: any[] = [];
     const off = onChildAdded(q, snap => {
       arr.push({ id: snap.key, ...snap.val() });
       setItems([...arr]);
-      setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 10);
+      // ★ 延迟滚动，确保 DOM 已更新
+      setTimeout(() => {
+        if (endRef.current) {
+          endRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 50);
     });
     return () => off();
   }, [path]);
 
+  // ★ 使用 onValue 而不是 onChildAdded 来订阅 blocks 数据（onChildAdded 只获取新增的，不获取已存在的）
   useEffect(() => {
-    const uid = (window as any)._uid;
-    if (!uid) return;
-    const offBlocks = onChildAdded(ref(db, `blocks/${uid}`), snap => {
-      setBlocks(prev => ({ ...prev, [snap.key]: true }));
-    });
-    return () => offBlocks?.();
-  }, []);
+    if (!uid) {
+      console.log('[MessageList] ★ No uid, skip loading blocks');
+      return;
+    }
+
+    console.log('[MessageList] ★ Loading blocks for uid:', uid);
+
+    const blocksRef = ref(db, `blocks/${uid}`);
+    const unsubscribe = onValue(
+      blocksRef,
+      (snap) => {
+        const blocksVal = snap.val() || {};
+        console.log('[MessageList] ★ Blocks snapshot received:', blocksVal);
+        setBlocks(blocksVal);
+      },
+      (error) => {
+        console.error('[MessageList] ★ Error loading blocks:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [uid]);
 
   const formatTime = (timestamp?: number | string) => {
     if (!timestamp) return '';
@@ -59,41 +95,78 @@ export default function MessageList({ path }: { path: string }) {
   };
 
   const handleBlock = async (authorId: string) => {
+    console.log('[MessageList] ★ handleBlock clicked, authorId:', authorId);
+    console.log('[MessageList] ★ Current uid:', uid);
+    console.log('[MessageList] ★ Current auth uid:', currentUid);
+
     setBlockingId(authorId);
     try {
       const { blockUser } = await import('../lib/social');
+      console.log('[MessageList] ★ Calling blockUser...');
       await blockUser(authorId);
-      setBlocks(prev => ({ ...prev, [authorId]: true }));
+      console.log('[MessageList] ★ blockUser succeeded');
+      
+      // ★ 立即更新本地状态，无需等待 Firebase 推送
+      setBlocks(prev => {
+        const next = { ...prev, [authorId]: true };
+        console.log('[MessageList] ★ Updated blocks state:', next);
+        return next;
+      });
+      
       show('User blocked', 'success', 900);
+      
+      // ★ Block 后保持滚动在底部
+      setTimeout(() => {
+        if (endRef.current) {
+          endRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 100);
     } catch (e: any) {
-      show('Failed to block user', 'error', 900);
+      console.error('[MessageList] ★ Block failed:', e);
+      show('Failed to block user: ' + (e.message || 'Unknown error'), 'error', 900);
     } finally {
       setBlockingId(null);
     }
   };
 
   const handleUnblock = async (authorId: string) => {
+    console.log('[MessageList] ★ handleUnblock clicked, authorId:', authorId);
+
     setBlockingId(authorId);
     try {
       const { unblockUser } = await import('../lib/social');
+      console.log('[MessageList] ★ Calling unblockUser...');
       await unblockUser(authorId);
+      console.log('[MessageList] ★ unblockUser succeeded');
+      
+      // ★ 立即更新本地状态
       setBlocks(prev => {
         const next = { ...prev };
         delete next[authorId];
+        console.log('[MessageList] ★ Updated blocks state:', next);
         return next;
       });
+      
       show('User unblocked', 'success', 900);
+      
+      // ★ Unblock 后保持滚动在底部
+      setTimeout(() => {
+        if (endRef.current) {
+          endRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 100);
     } catch (e: any) {
-      show('Failed to unblock user', 'error', 900);
+      console.error('[MessageList] ★ Unblock failed:', e);
+      show('Failed to unblock user: ' + (e.message || 'Unknown error'), 'error', 900);
     } finally {
       setBlockingId(null);
     }
   };
 
   return (
-    <div className='flex-1 overflow-y-auto p-4 space-y-3'>
+    <div ref={containerRef} className='flex-1 overflow-y-auto p-4 space-y-3'>
       {items.map(m => {
-        const isSelf = m.authorId === (window as any)._uid;
+        const isSelf = m.authorId === uid || m.authorId === currentUid;
         const timeLabel = formatTime(m.createdAt);
         const isBlocked = blocks[m.authorId];
         const isHovered = hoveredId === m.id;
@@ -132,7 +205,14 @@ export default function MessageList({ path }: { path: string }) {
                 </div>
                 {isHovered && !isSelf && (
                   <button
-                    onClick={() => isBlocked ? handleUnblock(m.authorId) : handleBlock(m.authorId)}
+                    onClick={() => {
+                      console.log('[MessageList] ★ Block button clicked, isBlocked:', isBlocked);
+                      if (isBlocked) {
+                        handleUnblock(m.authorId);
+                      } else {
+                        handleBlock(m.authorId);
+                      }
+                    }}
                     disabled={blockingId === m.authorId}
                     className={`text-xs px-2 py-1 rounded ${isBlocked ? 'bg-red-500/30 text-red-300 hover:bg-red-500/40' : 'bg-white/10 text-white hover:bg-white/20'} transition-colors disabled:opacity-50`}
                   >
