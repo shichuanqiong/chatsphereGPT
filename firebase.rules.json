@@ -71,21 +71,15 @@
 
     "directMessages": {
       "$chatId": {
-        ".read": "auth != null && (root.child('dmThreads').child(auth.uid).child($chatId).exists())",
-        ".write": "auth != null && newData.child('authorId').val() === auth.uid",
-        "$msgId": {
-          ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
-        }
+        ".read": "auth != null && data.child('participants').hasChild(auth.uid)",
+        ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
       }
     },
 
     "dmThreads": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
-        "$chatId": {
-          ".validate": "newData.hasChildren(['peerId'])"
-        }
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
 
