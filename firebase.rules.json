@@ -1,6 +1,5 @@
 {
   "rules": {
-    ".read": "auth != null",
     ".write": false,
 
     "presence": {
@@ -83,8 +82,8 @@
 
     "dmMessages": {
       "$threadId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && $threadId.contains(auth.uid)",
+        ".write": "auth != null && $threadId.contains(auth.uid)"
       }
     },
 
