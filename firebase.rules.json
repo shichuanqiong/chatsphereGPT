@@ -88,6 +88,7 @@
 
     "messages": {
       ".read": false,
+      ".write": "auth != null",
       "$roomId": {
         "$msgId": {
           ".read": "auth != null && root.child('roomMembers').child($roomId).child(auth.uid).exists()",
@@ -166,6 +167,7 @@
 
     "posts": {
       ".read": false,
+      ".write": "auth != null",
       "$postId": {
         ".read": "auth != null && (root.child('posts').child($postId).child('visibility').val() === 'public' || root.child('posts').child($postId).child('authorId').val() === auth.uid)",
         ".write": "auth != null && newData.child('authorId').val() === auth.uid",
