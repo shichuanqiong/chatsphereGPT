@@ -18,6 +18,14 @@
       }
     },
 
+    "nicknameIndex": {
+      "$slug": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.child('uid').isString()"
+      }
+    },
+
     "profilesStats": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
