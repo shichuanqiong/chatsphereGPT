@@ -185,6 +185,11 @@
       }
     },
 
+    "kickEvents": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
     "rateLimits": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
