@@ -3,6 +3,7 @@
     ".write": false,
 
     "presence": {
+      ".read": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth.uid === $uid",
@@ -11,6 +12,7 @@
     },
 
     "profiles": {
+      ".read": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $uid",
@@ -41,6 +43,7 @@
     },
 
     "rooms": {
+      ".read": "auth != null",
       "$roomId": {
         ".read": "auth != null && (root.child('rooms').child($roomId).child('visibility').val() === 'public' || root.child('roomMembers').child($roomId).child(auth.uid).exists())",
         ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
@@ -79,6 +82,7 @@
     },
 
     "messages": {
+      ".read": false,
       "$roomId": {
         "$msgId": {
           ".read": "auth != null && root.child('roomMembers').child($roomId).child(auth.uid).exists()",
@@ -153,6 +157,7 @@
     },
 
     "posts": {
+      ".read": false,
       "$postId": {
         ".read": "auth != null && (root.child('posts').child($postId).child('visibility').val() === 'public' || root.child('posts').child($postId).child('authorId').val() === auth.uid)",
         ".write": "auth != null && newData.child('authorId').val() === auth.uid",
