@@ -90,6 +90,8 @@
       ".read": false,
       ".write": "auth != null",
       "$roomId": {
+        ".read": "auth != null && (root.child('rooms').child($roomId).child('visibility').val() === 'public' || root.child('roomMembers').child($roomId).child(auth.uid).exists())",
+        ".write": "auth != null",
         "$msgId": {
           ".read": "auth != null && root.child('roomMembers').child($roomId).child(auth.uid).exists()",
           ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
@@ -105,6 +107,8 @@
         ".read": "auth != null && $threadId.contains(auth.uid)",
         ".write": "auth != null && $threadId.contains(auth.uid)",
         "$msgId": {
+          ".read": "auth != null && $threadId.contains(auth.uid)",
+          ".write": "auth != null && $threadId.contains(auth.uid)",
           ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').isString() && newData.child('content').isString()"
         }
       }
