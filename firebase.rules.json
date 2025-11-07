@@ -99,14 +99,19 @@
     },
 
     "dmMessages": {
+      ".read": "auth != null",
       ".write": "auth != null",
       "$threadId": {
         ".read": "auth != null && $threadId.contains(auth.uid)",
-        ".write": "auth != null && $threadId.contains(auth.uid)"
+        ".write": "auth != null && $threadId.contains(auth.uid)",
+        "$msgId": {
+          ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').isString() && newData.child('content').isString()"
+        }
       }
     },
 
     "dmThreads": {
+      ".read": "auth != null",
       ".write": "auth != null",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
@@ -115,6 +120,7 @@
     },
 
     "inbox": {
+      ".read": "auth != null",
       ".write": "auth != null",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
