@@ -15,10 +15,10 @@ const DEFAULT_SEO: SeoConfig = {
   title: 'TalkiSphere — Real-time Social Chat Community',
   description: 'A clean, respectful place to talk. Start rooms or DMs instantly.',
   keywords: 'chat, realtime, community, chatsphere',
-  canonicalBase: 'https://chatsphere.app',
-  ogImage: 'https://chatsphere.app/og.jpg',
+  canonicalBase: 'https://talkisphere.com',
+  ogImage: 'https://talkisphere.com/og.jpg',
   twitterCard: 'summary_large_image',
-  robotsTxt: 'User-agent: *\nDisallow: /admin\nSitemap: https://chatsphere.app/sitemap.xml',
+  robotsTxt: 'User-agent: *\nDisallow: /admin\nSitemap: https://talkisphere.com/sitemap.xml',
 };
 
 const SeoCtx = createContext<{ cfg: SeoConfig; refresh: () => Promise<void> }>({ cfg: DEFAULT_SEO, refresh: async () => {} });
