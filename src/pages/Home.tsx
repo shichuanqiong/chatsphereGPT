@@ -620,8 +620,10 @@ export default function Home() {
     let off: (() => void) | null = null;
     if (dmId) {
       const q = query(ref(db, `/dmMessages/${dmId}`), orderByChild('createdAt'), limitToLast(200));
+      console.log('[DM DEBUG] 监听 DM 消息', { dmId, uid });
       off = onValue(q, async (snap) => {
         const val = snap.val() || {};
+        console.log('[DM DEBUG] 收到 DM 消息更新', { dmId, messageCount: Object.keys(val).length, messages: val });
         const arr: Message[] = Object.keys(val).map((k) => val[k]).sort((a,b) => (a.createdAt||0)-(b.createdAt||0));
         
         // 检查新消息并增加未读数（仅对当前用户，且非活跃会话）
