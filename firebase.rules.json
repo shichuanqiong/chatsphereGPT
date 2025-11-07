@@ -4,6 +4,7 @@
 
     "presence": {
       ".read": "auth != null",
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth.uid === $uid",
@@ -13,6 +14,7 @@
 
     "profiles": {
       ".read": "auth != null",
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $uid",
@@ -21,6 +23,7 @@
     },
 
     "nicknameIndex": {
+      ".write": "auth != null",
       "$slug": {
         ".read": "auth != null",
         ".write": "auth != null",
@@ -44,6 +47,7 @@
 
     "rooms": {
       ".read": "auth != null",
+      ".write": "auth != null",
       "$roomId": {
         ".read": "auth != null && (root.child('rooms').child($roomId).child('visibility').val() === 'public' || root.child('roomMembers').child($roomId).child(auth.uid).exists())",
         ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
@@ -64,6 +68,7 @@
     },
 
     "roomMembers": {
+      ".write": "auth != null",
       "$roomId": {
         "$uid": {
           ".read": "auth != null",
@@ -93,6 +98,7 @@
     },
 
     "dmMessages": {
+      ".write": "auth != null",
       "$threadId": {
         ".read": "auth != null && $threadId.contains(auth.uid)",
         ".write": "auth != null && $threadId.contains(auth.uid)"
@@ -100,6 +106,7 @@
     },
 
     "dmThreads": {
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null"
@@ -107,6 +114,7 @@
     },
 
     "inbox": {
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null"
