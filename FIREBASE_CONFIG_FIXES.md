@@ -121,3 +121,4 @@ firebase deploy --only database
 
 **Next Step:** Make the manual Firebase Console changes above, then test access from New Zealand.
 
+

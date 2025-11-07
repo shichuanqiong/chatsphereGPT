@@ -214,3 +214,4 @@ firebase deploy --only database
 - 如果根级也没有，则应用全局 `.read: false, .write: false`
 
 
+
