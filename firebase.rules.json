@@ -34,7 +34,7 @@
 
     "rooms": {
       "$roomId": {
-        ".read": "auth != null",
+        ".read": "auth != null && (root.child('rooms').child($roomId).child('visibility').val() === 'public' || root.child('roomMembers').child($roomId).child(auth.uid).exists())",
         ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
         ".validate": "newData.child('ownerId').exists()",
         "invites": {
@@ -73,7 +73,7 @@
     "messages": {
       "$roomId": {
         "$msgId": {
-          ".read": "auth != null",
+          ".read": "auth != null && root.child('roomMembers').child($roomId).child(auth.uid).exists()",
           ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
           ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
         }
@@ -146,7 +146,7 @@
 
     "posts": {
       "$postId": {
-        ".read": "auth != null",
+        ".read": "auth != null && (root.child('posts').child($postId).child('visibility').val() === 'public' || root.child('posts').child($postId).child('authorId').val() === auth.uid)",
         ".write": "auth != null && newData.child('authorId').val() === auth.uid",
         ".validate": "newData.hasChildren(['authorId', 'content'])"
       }
