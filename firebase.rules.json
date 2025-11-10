@@ -51,7 +51,7 @@
         "invites": {
           "$uid": {
             ".read": "auth != null",
-            ".write": "auth != null && root.child('rooms').child($roomId).child('ownerId').val() === auth.uid"
+            ".write": "auth != null && (root.child('rooms').child($roomId).child('ownerId').val() === auth.uid || auth.uid === $uid)"
           }
         },
 
@@ -119,7 +119,7 @@
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null",
         "$inboxId": {
-          ".write": "auth != null && (auth.uid === $uid || !data.exists())"
+          ".write": "auth != null && auth.uid === $uid"
         }
       }
     },
