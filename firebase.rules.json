@@ -90,8 +90,8 @@
 
     "dmMessages": {
       "$threadId": {
-        ".read": "auth != null && (root.child('dmThreads').child(auth.uid).child($threadId).exists() || $threadId.contains(auth.uid))",
-        ".write": "auth != null && $threadId.contains(auth.uid) && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
+        ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
+        ".write": "auth != null && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()"
       }
     },
 

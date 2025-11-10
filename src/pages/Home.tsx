@@ -836,9 +836,26 @@ export default function Home() {
       await acceptInvite(roomId, uid, inviteId);
       show('Joined room successfully', 'success', 1500);
       
-      // 使用 selectRoom 函数来切换到新加入的房间
-      // selectRoom 会自动清理DM状态并加入房间
-      await selectRoom(roomId);
+      // 立即导航到房间（不通过 selectRoom，避免额外的确认逻辑）
+      setDmId('');
+      setDmPeer(null);
+      setActiveRoomId(roomId);
+      
+      // 同时确保用户加入房间成员列表
+      if (uid) {
+        try {
+          await joinRoom(roomId, uid);
+          await readStateHelpers.markRoomRead(roomId);
+        } catch (e: any) {
+          if (e.message === 'banned') {
+            show('You are banned from this room', 'error', 2000);
+            navigate('/home');
+          }
+        }
+      }
+      
+      // 最后才导航
+      setTimeout(() => navigate(`/r/${roomId}`), 100);
     } catch (e: any) {
       if (e.message === 'banned') {
         show('You are banned from this room', 'error', 2000);
