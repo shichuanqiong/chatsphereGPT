@@ -95,11 +95,12 @@
     },
 
     "dmMessages": {
-      ".write": "auth != null",
       "$threadId": {
-        ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
-        ".write": "auth != null && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
-        ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
+        "$msgId": {
+          ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
+          ".write": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists() && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
+          ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
+        }
       }
     },
 
