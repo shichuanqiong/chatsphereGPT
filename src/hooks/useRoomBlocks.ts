@@ -6,15 +6,17 @@ export function useRoomBlocks(myUid: string | undefined, roomId: string | undefi
   const [map, setMap] = useState<Record<string, true>>({});
 
   useEffect(() => {
-    if (!myUid || !roomId) return;
-    const r = ref(db, `blocks/${myUid}/${roomId}`);
+    if (!myUid) return;
+    // v1.19-stable 没有房间级别的 block，使用全局 block（在房间中也适用）
+    const r = ref(db, `blocks/${myUid}`);
     const off = onValue(r, (snap) => setMap((snap.val() as any) ?? {}));
     return () => off();
-  }, [myUid, roomId]);
+  }, [myUid]);
 
   const setBlocked = async (peerUid: string, blocked: boolean) => {
     if (!myUid || !roomId || myUid === peerUid) return;
-    const path = ref(db, `blocks/${myUid}/${roomId}/${peerUid}`);
+    // v1.19-stable：使用全局 block 路径
+    const path = ref(db, `blocks/${myUid}/${peerUid}`);
     blocked ? await set(path, true) : await remove(path);
   };
 
