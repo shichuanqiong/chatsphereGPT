@@ -6,25 +6,25 @@
     "nicknameIndex": {
       "$slug": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid) || (data.exists() && data.val() === auth.uid && (!newData.exists() || newData.val() === auth.uid)))"
       }
     },
 
     "presence": {
-      ".write": "auth != null",
+      ".write": false,
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['state', 'lastSeen'])"
       }
     },
 
     "profiles": {
-      ".write": "auth != null",
+      ".write": false,
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $uid",
-        ".validate": "newData.hasChildren(['uid']) && newData.child('uid').val() === $uid"
+        ".validate": "newData.hasChildren(['uid']) && newData.child('uid').val() === $uid && newData.child('isAdmin').val() === data.child('isAdmin').val()"
       }
     },
 
@@ -47,12 +47,14 @@
         ".read": "auth != null",
         ".write": "auth != null && (newData.child('ownerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
         ".validate": "newData.child('ownerId').exists()",
+
         "invites": {
           "$uid": {
             ".read": "auth != null",
             ".write": "auth != null"
           }
         },
+
         "bans": {
           "$uid": {
             ".read": "auth != null",
@@ -84,7 +86,7 @@
       "$roomId": {
         "$msgId": {
           ".read": "auth != null",
-          ".write": "auth != null && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
+          ".write": "auth != null && newData.exists() && ((!data.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && data.child('authorId').val() === auth.uid)) && newData.child('content').isString()",
           ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
         }
       }
@@ -92,22 +94,23 @@
 
     "dmMessages": {
       "$threadId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
+        ".write": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists() && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
+        ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
       }
     },
 
     "dmThreads": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null"
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
 
     "inbox": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null"
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
 
@@ -124,7 +127,7 @@
     },
 
     "blocks": {
-      ".write": "auth != null",
+      ".write": false,
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
@@ -171,7 +174,7 @@
     "posts": {
       "$postId": {
         ".read": "auth != null",
-        ".write": "auth != null && newData.child('authorId').val() === auth.uid",
+        ".write": "auth != null && newData.exists() && ((!data.exists() && newData.child('authorId').val() === auth.uid) || (data.exists() && data.child('authorId').val() === auth.uid))",
         ".validate": "newData.hasChildren(['authorId', 'content'])"
       }
     },
