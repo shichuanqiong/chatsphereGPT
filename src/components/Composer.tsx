@@ -147,7 +147,29 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
         payload,
       });
       
-      // 1) 写入消息
+      // 0) 计算双方 uid（提前）
+      const me = uid;
+      const peer = me === a ? b : a;
+
+      // 1) 先创建 dmThreads（必须在写 dmMessages 之前！）
+      try {
+        console.log('[DM DEBUG] 创建发送者 dmThreads', { path: `/dmThreads/${me}/${target.dmId}` });
+        await set(dbRef(db, `/dmThreads/${me}/${target.dmId}`), {
+          threadId: target.dmId,
+          peerId: peer,
+          lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
+          lastSender: me,
+          lastTs: serverTimestamp(),
+          unread: 0
+        });
+        console.log('[DM DEBUG] ✅ 发送者 dmThreads 创建成功');
+      } catch (err) {
+        console.error('[DM DEBUG] ❌ 发送者 dmThreads 创建失败', err);
+        show('Failed to create thread', 'error');
+        return;
+      }
+
+      // 2) 再写入消息（此时 dmThreads 已存在）
       try {
         const msgRef = await push(dbRef(db, `/dmMessages/${target.dmId}`), payload);
         console.log('[DM DEBUG] ✅ 消息写入成功', { msgKey: msgRef.key, path: `/dmMessages/${target.dmId}/${msgRef.key}` });
@@ -157,26 +179,7 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
         return;
       }
 
-      // 2) 计算双方 uid（复用上面的 a, b）
-      const me = uid;
-      const peer = me === a ? b : a;
-
-      // 3) 更新"我的 thread 列表"（lastMsg/lastTs/peerId/reset unread）
-      try {
-        await set(dbRef(db, `/dmThreads/${me}/${target.dmId}`), {
-          threadId: target.dmId,
-          peerId: peer,
-          lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
-          lastSender: me,
-          lastTs: serverTimestamp(),
-          unread: 0
-        });
-        console.log('[DM DEBUG] ✅ 发送者 thread 更新成功', { path: `/dmThreads/${me}/${target.dmId}` });
-      } catch (err) {
-        console.error('[DM DEBUG] ❌ 发送者 thread 更新失败', err);
-      }
-
-      // 4) 更新"对方的 thread 列表"（并自增 unread）
+      // 3) 更新"对方的 thread 列表"（并自增 unread）
       const peerPath = dbRef(db, `/dmThreads/${peer}/${target.dmId}`);
       try {
         const peerSnap = await get(peerPath);
