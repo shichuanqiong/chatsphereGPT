@@ -97,7 +97,7 @@
     "dmMessages": {
       "$threadId": {
         "$msgId": {
-          ".read": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists()",
+          ".read": "auth != null && (root.child('dmThreads').child(auth.uid).child($threadId).exists() || $threadId.contains(auth.uid))",
           ".write": "auth != null && root.child('dmThreads').child(auth.uid).child($threadId).exists() && newData.exists() && newData.hasChildren(['authorId', 'content', 'createdAt']) && newData.child('authorId').val() === auth.uid && newData.child('content').isString()",
           ".validate": "newData.hasChildren(['authorId', 'content', 'createdAt'])"
         }
