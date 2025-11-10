@@ -175,13 +175,18 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
         // 后台更新 inbox（不阻塞）
         console.log('[DM DEBUG] 3️⃣ 异步更新 inbox...');
         const inboxKey = `dm_${target.dmId}`;
-        set(dbRef(db, `/inbox/${peer}/${inboxKey}`), {
-          type: 'dm',
-          threadId: target.dmId,
-          peerId: me,
-          peerName: nickname,
-          lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
-          lastTs: serverTimestamp()
+        get(dbRef(db, `/inbox/${peer}/${inboxKey}`)).then(snap => {
+          const curCount = snap.exists() ? (snap.val()?.count || 0) : 0;
+          return set(dbRef(db, `/inbox/${peer}/${inboxKey}`), {
+            type: 'dm',
+            threadId: target.dmId,
+            peerId: me,
+            lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
+            lastSender: me,
+            unread: true,
+            count: curCount + 1,
+            ts: serverTimestamp()
+          });
         }).catch(err => console.error('[DM DEBUG] inbox 异步失败（可忽略）:', err));
         
       } catch (err) {
