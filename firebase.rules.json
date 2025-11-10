@@ -3,6 +3,13 @@
     ".read": "auth != null",
     ".write": false,
 
+    "nicknameIndex": {
+      "$slug": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
     "presence": {
       "$uid": {
         ".read": "auth != null",
