@@ -3,7 +3,15 @@
     ".read": "auth != null",
     ".write": false,
 
+    "nicknameIndex": {
+      "$slug": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
     "presence": {
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth.uid === $uid",
@@ -12,6 +20,7 @@
     },
 
     "profiles": {
+      ".write": "auth != null",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $uid",
@@ -29,7 +38,7 @@
     "roles": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": false
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
 
