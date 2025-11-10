@@ -139,87 +139,58 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
       const peerUid = uid === a ? b : a;
       if (!(await canSendTo(peerUid))) { show('Messaging is blocked with this user.', 'error'); return; }
       
-      // 调试日志
-      console.log('[DM DEBUG] 开始发送消息', {
-        dmId: target.dmId,
-        senderUid: uid,
-        receiverUid: peerUid,
-        payload,
-      });
+      console.log('[DM DEBUG] 开始发送消息', { dmId: target.dmId, uid, peerUid });
       
-      // 0) 计算双方 uid（提前）
       const me = uid;
       const peer = me === a ? b : a;
 
-      // 1) 先创建 dmThreads（必须在写 dmMessages 之前！）
+      // 只做最必要的操作：写消息 + 保存 thread
       try {
-        console.log('[DM DEBUG] 创建发送者 dmThreads', { path: `/dmThreads/${me}/${target.dmId}` });
-        await set(dbRef(db, `/dmThreads/${me}/${target.dmId}`), {
-          threadId: target.dmId,
-          peerId: peer,
-          lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
-          lastSender: me,
-          lastTs: serverTimestamp(),
-          unread: 0
-        });
-        console.log('[DM DEBUG] ✅ 发送者 dmThreads 创建成功');
-      } catch (err) {
-        console.error('[DM DEBUG] ❌ 发送者 dmThreads 创建失败', err);
-        show('Failed to create thread', 'error');
-        return;
-      }
-
-      // 2) 再写入消息（此时 dmThreads 已存在）
-      try {
+        // 1) 直接写消息（简化）
         const msgRef = await push(dbRef(db, `/dmMessages/${target.dmId}`), payload);
-        console.log('[DM DEBUG] ✅ 消息写入成功', { msgKey: msgRef.key, path: `/dmMessages/${target.dmId}/${msgRef.key}` });
-      } catch (pushErr) {
-        console.error('[DM DEBUG] ❌ 消息写入失败', pushErr);
-        show('Failed to send message', 'error');
-        return;
-      }
-
-      // 3) 更新"对方的 thread 列表"（并自增 unread）
-      const peerPath = dbRef(db, `/dmThreads/${peer}/${target.dmId}`);
-      try {
-        const peerSnap = await get(peerPath);
-        const curUnread = peerSnap.exists() ? (peerSnap.val()?.unread || 0) : 0;
+        console.log('[DM DEBUG] ✅ 消息写入成功', { msgKey: msgRef.key });
         
-        await update(peerPath, {
-          threadId: target.dmId,
-          peerId: me,
-          lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
-          lastSender: me,
-          lastTs: serverTimestamp(),
-          unread: curUnread + 1
-        });
-        console.log('[DM DEBUG] ✅ 接收者 thread 更新成功', { path: `/dmThreads/${peer}/${target.dmId}`, unread: curUnread + 1 });
-      } catch (err) {
-        console.error('[DM DEBUG] ❌ 接收者 thread 更新失败', err);
-      }
-
-      // 5) 添加/累加 DM 通知到对方的 inbox（按会话聚合）
-      const inboxKey = `dm_${target.dmId}`;
-      const peerInboxRef = dbRef(db, `inbox/${peer}/${inboxKey}`);
-      try {
-        const prev = await get(peerInboxRef);
-        const prevCount = prev.exists() ? (prev.val()?.count || 0) : 0;
-
-        await set(peerInboxRef, {
+        // 2) 后台更新 thread（不阻塞）
+        Promise.all([
+          // 发送者 thread
+          set(dbRef(db, `/dmThreads/${me}/${target.dmId}`), {
+            threadId: target.dmId,
+            peerId: peer,
+            lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
+            lastSender: me,
+            lastTs: serverTimestamp(),
+            unread: 0
+          }).catch(err => console.error('[DM DEBUG] 发送者 thread 失败:', err)),
+          
+          // 接收者 thread
+          get(dbRef(db, `/dmThreads/${peer}/${target.dmId}`)).then(snap => {
+            const curUnread = snap.exists() ? (snap.val()?.unread || 0) : 0;
+            return set(dbRef(db, `/dmThreads/${peer}/${target.dmId}`), {
+              threadId: target.dmId,
+              peerId: me,
+              lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
+              lastSender: me,
+              lastTs: serverTimestamp(),
+              unread: curUnread + 1
+            });
+          }).catch(err => console.error('[DM DEBUG] 接收者 thread 失败:', err))
+        ]).catch(() => {});
+        
+        // 3) 后台更新 inbox（不阻塞）
+        const inboxKey = `dm_${target.dmId}`;
+        set(dbRef(db, `/inbox/${peer}/${inboxKey}`), {
           type: 'dm',
           threadId: target.dmId,
           peerId: me,
-          fromName: nickname,
-          to: peer,
+          peerName: nickname,
           lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
-          lastSender: me,
-          unread: true,
-          count: prevCount + 1,
-          ts: serverTimestamp()
-        });
-        console.log('[DM DEBUG] ✅ Inbox 更新成功', { path: `inbox/${peer}/${inboxKey}`, count: prevCount + 1 });
+          lastTs: serverTimestamp()
+        }).catch(err => console.error('[DM DEBUG] inbox 失败:', err));
+        
       } catch (err) {
-        console.error('[DM DEBUG] ❌ Inbox 更新失败', err);
+        console.error('[DM DEBUG] ❌ 消息写入失败:', err);
+        show('Failed to send message', 'error');
+        return;
       }
     }
 
