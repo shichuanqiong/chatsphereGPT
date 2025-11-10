@@ -175,6 +175,8 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
         // 后台更新 inbox（不阻塞）
         console.log('[DM DEBUG] 3️⃣ 异步更新 inbox...');
         const inboxKey = `dm_${target.dmId}`;
+        
+        // 更新接收者的 inbox（unread: true）
         get(dbRef(db, `/inbox/${peer}/${inboxKey}`)).then(snap => {
           const curCount = snap.exists() ? (snap.val()?.count || 0) : 0;
           return set(dbRef(db, `/inbox/${peer}/${inboxKey}`), {
@@ -187,7 +189,22 @@ const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer({ targ
             count: curCount + 1,
             ts: serverTimestamp()
           });
-        }).catch(err => console.error('[DM DEBUG] inbox 异步失败（可忽略）:', err));
+        }).catch(err => console.error('[DM DEBUG] 接收者 inbox 异步失败（可忽略）:', err));
+        
+        // 同时更新发送者自己的 inbox（unread: false，已读）
+        get(dbRef(db, `/inbox/${me}/${inboxKey}`)).then(snap => {
+          const curCount = snap.exists() ? (snap.val()?.count || 0) : 0;
+          return set(dbRef(db, `/inbox/${me}/${inboxKey}`), {
+            type: 'dm',
+            threadId: target.dmId,
+            peerId: peer,
+            lastMsg: short(payload.type === 'gif' ? '[GIF]' : payload.content),
+            lastSender: me,
+            unread: false,  // 发送者自己的消息标记为已读
+            count: curCount + 1,
+            ts: serverTimestamp()
+          });
+        }).catch(err => console.error('[DM DEBUG] 发送者 inbox 异步失败（可忽略）:', err));
         
       } catch (err) {
         console.error('[DM DEBUG] ❌ DM 发送失败:', err);
