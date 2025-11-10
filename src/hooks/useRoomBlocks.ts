@@ -7,14 +7,14 @@ export function useRoomBlocks(myUid: string | undefined, roomId: string | undefi
 
   useEffect(() => {
     if (!myUid || !roomId) return;
-    const r = ref(db, `userBlocks/${myUid}/rooms/${roomId}`);
+    const r = ref(db, `blocks/${myUid}/${roomId}`);
     const off = onValue(r, (snap) => setMap((snap.val() as any) ?? {}));
     return () => off();
   }, [myUid, roomId]);
 
   const setBlocked = async (peerUid: string, blocked: boolean) => {
     if (!myUid || !roomId || myUid === peerUid) return;
-    const path = ref(db, `userBlocks/${myUid}/rooms/${roomId}/${peerUid}`);
+    const path = ref(db, `blocks/${myUid}/${roomId}/${peerUid}`);
     blocked ? await set(path, true) : await remove(path);
   };
 
@@ -29,14 +29,14 @@ export function useGlobalBlocks(myUid: string | undefined) {
 
   useEffect(() => {
     if (!myUid) return;
-    const r = ref(db, `userBlocks/${myUid}/global`);
+    const r = ref(db, `blocks/${myUid}`);
     const off = onValue(r, (snap) => setMap((snap.val() as any) ?? {}));
     return () => off();
   }, [myUid]);
 
   const setBlocked = async (peerUid: string, blocked: boolean) => {
     if (!myUid || myUid === peerUid) return;
-    const path = ref(db, `userBlocks/${myUid}/global/${peerUid}`);
+    const path = ref(db, `blocks/${myUid}/${peerUid}`);
     blocked ? await set(path, true) : await remove(path);
   };
 
